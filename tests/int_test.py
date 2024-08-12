@@ -18,5 +18,5 @@ iris_ice = create_IRISIceberg()
 iris_ice.initial_table_sync(tablename)
 
 ice_table = iris_ice.iceberg.load_table(tablename)
-
-print(ice_table)
+data = ice_table.scan().to_pandas()
+print(data)
