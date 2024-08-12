@@ -13,5 +13,10 @@ def create_IRISIceberg():
     ice.iris.create_engine()
     return ice 
 
-ice = create_IRISIceberg()
-ice.initial_table_sync("FS.AccountMaster")
+tablename = "FS.AccountMaster"
+iris_ice = create_IRISIceberg()
+iris_ice.initial_table_sync(tablename)
+
+ice_table = iris_ice.iceberg.load_table(tablename)
+
+print(ice_table)

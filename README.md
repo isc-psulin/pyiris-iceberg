@@ -10,10 +10,11 @@ The iris-iceberg library provides utilities for replicating IRIS(SQL) tables int
 1. git clone git@github.com:isc-patrick/iris-iceberg.git
 2. cd iris-iceberg
 3. Create and activate a virtualenv
-4. pip install -r requirements.txt
-5. pip install -e .
-6. Add a .env file to the project root with a ADLFS.CONNECTION_STRING (this is only needed for wring to Azure)
-7. Create a /tmp/iceberg directory, or change the locations in the config for local files
+4. Get The iris DB-API library, https://intersystems-community.github.io/iris-driver-distribution/
+5. pip install -r requirements.txt
+6. pip install -e .
+7. Add a .env file to the project root with a ADLFS.CONNECTION_STRING (this is only needed for wring to Azure)
+8. Create a /tmp/iceberg directory, or change the locations in the config for local files
 
 
 ## Installation Notes

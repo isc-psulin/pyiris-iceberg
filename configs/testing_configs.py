@@ -55,5 +55,11 @@ iris_src_local_target = {
     "target_iceberg": "LocalTesting"
 }
 
+local_src_azure_target = {
+    "src_server": "LocalIRIS",
+    "target_iceberg": "Azure"
+}
+
 local_testing.update(base)
 iris_src_local_target.update(base)
+local_src_azure_target.update(base)

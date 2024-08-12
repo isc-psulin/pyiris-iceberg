@@ -13,9 +13,9 @@ from sqlalchemy import  MetaData
 # Local package
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_with_dtypes
 from irisiceberg.utils import Configuration, IRIS_Config
+from loguru import logger
 
-logger = logging.getLogger(__name__)
-
+# TODO - move this to a config file
 # Used is no config is provided when creating IRISIceberg
 ICEBERG_IRIS_CONFIG_TABLE = "IcebergConfig"
 
@@ -60,9 +60,9 @@ class IRIS:
                 self.metadata.reflect(self.engine)
 
 class Iceberg():
-    def __init__(self, iris: IRIS, config: Configuration):
+    def __init__(self, config: Configuration):
         self.config = config
-        self.iris = iris
+        #self.iris = iris
 
         target_iceberg =  get_from_list(self.config.icebergs, self.config.target_iceberg) # -> Iceberg_Config
 
@@ -73,7 +73,7 @@ class Iceberg():
         ''' 
         Load the table from iceberg using the catalog if it exists
         '''
-        table = self.iceberg.catalog.load_table(tablename)
+        table = self.catalog.load_table(tablename)
         return table
 
 class IcebergIRIS:
@@ -87,24 +87,25 @@ class IcebergIRIS:
             self.config = self.load_config(name)
 
         self.iris = IRIS(self.config)
-        self.iceberg = Iceberg(self.iris, self.config)
+        self.iceberg = Iceberg(self.config)
     
     def initial_table_sync(self, tablename: str):
         
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
-        #print(iceberg_table.schema)
         logger.info(f"Created table {tablename}")
 
         # Load data from IRIS table
         #iris_data = self.iris.load_table_data(tablename)
-        iris_data = read_sql_with_dtypes(self.iris.engine, tablename)
+        for iris_data in read_sql_with_dtypes(self.iris.engine, tablename):
 
-        arrow_data = pa.Table.from_pandas(iris_data)
-        logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
+            arrow_data = pa.Table.from_pandas(iris_data)
+            logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
 
-        iceberg_table.append(arrow_data)
-        logger.info(f"Appended to iceberg table")
+            # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
+            iceberg_table.append(arrow_data)
+            
+            logger.info(f"Appended to iceberg table")
 
     def create_iceberg_table(self, tablename: str):
         '''
