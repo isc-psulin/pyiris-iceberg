@@ -8,7 +8,7 @@ base = {
         {
             "name": "LocalTesting",
             "dialect": "sqlite",
-            "database": "/Users/psulin/projects/insights/python/insights/tests/data/test.db",
+            "database": "/tmp/iceberg/test.db",
             "warehouse": "/tmp/iceberg",
             "schemas": [],
         },
@@ -21,7 +21,7 @@ base = {
             "password": "sys",
             "user": "_system",
             "port": 1972,
-            "schemas": ["FS", "SQLUSER"],
+            "schemas": ["FS"],
             "field_exclusions": {"table_name": "FS.SecurityMaster", "fields": ["composite_figi"]}
         },
     ],
@@ -34,10 +34,10 @@ base = {
         },
         {
             "name": "Azure",
-            "uri": "",
+            "uri": "sqlite:////tmp/iceberg/pyiceberg_catalog.db",
             "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
             "adlfs.account-name": "testiris",
-             "type": "azure",
+            "type": "azure",
             "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
             "database": "testiris",
             "location": "abfs://mgb"

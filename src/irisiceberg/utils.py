@@ -70,7 +70,7 @@ class IRIS_Config(MyBaseModel):
 
 class Iceberg_Config(MyBaseModel): 
     name: str
-    uri: str
+    uri: Optional[str] = ""
 
 class Configuration(MyBaseModel):
     servers: Optional[List[IRIS_Config]] = []
