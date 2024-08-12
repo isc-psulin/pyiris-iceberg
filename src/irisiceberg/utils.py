@@ -3,10 +3,11 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from typing import Optional, List
 import iris
-from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float
+from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect
 from pyiceberg.schema import Schema
 from pyiceberg.types import NestedField
 import pytest
+import pandas as pd
 
 config1 = {
     "servers": [
@@ -122,7 +123,7 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
         TimestampType,
         StringType,
     )
-    from sqlalchemy import Integer, BigInteger, Float, Boolean, Date, DateTime, String, Text
+    from sqlalchemy import Integer, BigInteger, Float, Boolean, Date, DateTime, String, Text, BIGINT
 
     type_mapping = {
         Integer: IntegerType(),
@@ -133,6 +134,7 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
         DateTime: TimestampType(),
         String: StringType(),
         Text: StringType(),
+        BIGINT: LongType()
     }
 
     iceberg_fields = []
@@ -142,7 +144,94 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
             field_id=i,
             name=column.name,
             field_type=iceberg_type,
-            required=not column.nullable
+           # required=not column.nullable
         ))
 
     return Schema(*iceberg_fields)
+
+def read_sql_with_dtypes(engine, table_name):
+    
+    # Parse schema and table name
+    if '.' in table_name:
+        schema, table = table_name.split('.', 1)
+    else:
+        schema, table = None, table_name
+    
+    # Get table metadata
+    inspector = inspect(engine)
+    columns = inspector.get_columns(table, schema=schema)
+    
+    # Create a dictionary to map SQL types to pandas dtypes
+    dtype_map = {
+        'INTEGER': 'int64',
+        'BIGINT': 'int64',
+        'SMALLINT': 'int32',
+        'FLOAT': 'float64',
+        'REAL': 'float32',
+        'DOUBLE': 'float64',
+        'NUMERIC': 'float64',
+        'DECIMAL': 'float64',
+        'CHAR': 'string',
+        'VARCHAR': 'string',
+        'TEXT': 'string',
+        'DATE': 'datetime64[ns]',
+        'TIMESTAMP': 'datetime64[ns]',
+        'BOOLEAN': 'bool',
+        'TINYINT': 'string'
+    }
+    
+    # Create a dictionary of column names and their corresponding pandas dtypes
+    dtypes = {col['name']: dtype_map.get(str(col['type']).split('(')[0].upper(), 'object') 
+              for col in columns}
+    
+    # Construct the full table name for the query
+    full_table_name = f"{schema+'.' if schema else ''}{table}"
+    
+    # Read the SQL table into a DataFrame with specified dtypes
+    query = f"SELECT * FROM {full_table_name}"
+    df = pd.read_sql(query, engine, dtype=dtypes)
+    
+    # Convert date and timestamp columns
+    for col in columns:
+        if str(col['type']).upper().startswith(('DATE', 'TIMESTAMP')):
+            df[col['name']] = pd.to_datetime(df[col['name']])
+    
+    return df
+
+     
+    # Get table metadata
+    inspector = inspect(engine)
+    columns = inspector.get_columns(table_name)
+    
+    # Create a dictionary to map SQL types to pandas dtypes
+    dtype_map = {
+        'INTEGER': 'int64',
+        'BIGINT': 'int64',
+        'SMALLINT': 'int32',
+        'FLOAT': 'float64',
+        'REAL': 'float32',
+        'DOUBLE': 'float64',
+        'NUMERIC': 'float64',
+        'DECIMAL': 'float64',
+        'CHAR': 'string',
+        'VARCHAR': 'string',
+        'TEXT': 'string',
+        'DATE': 'datetime64[ns]',
+        'TIMESTAMP': 'datetime64[ns]',
+        'BOOLEAN': 'bool'
+    }
+    
+    # Create a dictionary of column names and their corresponding pandas dtypes
+    dtypes = {col['name']: dtype_map.get(str(col['type']).split('(')[0].upper(), 'object') 
+              for col in columns}
+    
+    # Read the SQL table into a DataFrame with specified dtypes
+    query = f"SELECT * FROM {table_name}"
+    df = pd.read_sql(query, engine, dtype=dtypes)
+    
+    # Convert date and timestamp columns
+    for col in columns:
+        if str(col['type']).upper().startswith(('DATE', 'TIMESTAMP')):
+            df[col['name']] = pd.to_datetime(df[col['name']])
+    
+    return df

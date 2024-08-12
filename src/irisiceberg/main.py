@@ -11,8 +11,8 @@ from pyiceberg.catalog.sql import  SqlCatalog
 from sqlalchemy import  MetaData
 
 # Local package
-from utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list
-from utils import Configuration, IRIS_Config
+from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_with_dtypes
+from irisiceberg.utils import Configuration, IRIS_Config
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +30,8 @@ class IRIS:
         self.engine = get_alchemy_engine(self.config)
     
     def connect(self): # -> Connection
+        if not self.engine:
+            self.engine = get_alchemy_engine(self.config)
         return self.engine.connect()
 
     def disconnect(self):
@@ -91,17 +93,18 @@ class IcebergIRIS:
         
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
+        #print(iceberg_table.schema)
         logger.info(f"Created table {tablename}")
 
         # Load data from IRIS table
-        iris_data = self.iris.load_table_data(tablename)
+        #iris_data = self.iris.load_table_data(tablename)
+        iris_data = read_sql_with_dtypes(self.iris.engine, tablename)
 
         arrow_data = pa.Table.from_pandas(iris_data)
         logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
 
         iceberg_table.append(arrow_data)
         logger.info(f"Appended to iceberg table")
-
 
     def create_iceberg_table(self, tablename: str):
         '''
@@ -134,7 +137,6 @@ class IcebergIRIS:
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema
         
-    
     def get_table_schema(self, tablename: str):
         # TODO - Use the table metadata to get schema instead of this way which infers from data
         # Iff a column has a ll nulls this will never work

@@ -120,7 +120,6 @@ prompt_toolkit==3.0.47
 psutil==6.0.0
 ptyprocess==0.7.0
 pure_eval==0.2.3
--e git+https://github.com/isc-patrick/py-iris-utils.git@f8e1e42b7608ffde2304b798c5c595942d53b172#egg=py_iris_utils
 pyarrow==17.0.0
 pycodestyle==2.12.1
 pycparser==2.22
