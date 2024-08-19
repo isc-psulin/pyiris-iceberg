@@ -123,18 +123,20 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
         TimestampType,
         StringType,
     )
-    from sqlalchemy import Integer, BigInteger, Float, Boolean, Date, DateTime, String, Text, BIGINT
+    from sqlalchemy import INTEGER, BIGINT, FLOAT, BOOLEAN, DATE, DATETIME, String, TEXT, TIMESTAMP
+    from sqlalchemy_iris import DOUBLE
 
     type_mapping = {
-        Integer: IntegerType(),
-        BigInteger: LongType(),
-        Float: FloatType(),
-        Boolean: BooleanType(),
-        Date: DateType(),
-        DateTime: TimestampType(),
-        String: StringType(),
-        Text: StringType(),
+        INTEGER: IntegerType(),
         BIGINT: LongType(),
+        FLOAT: FloatType(),
+        BOOLEAN: BooleanType(),
+        DATE: DateType(),
+        DATETIME: TimestampType(),
+        String: StringType(),
+        TEXT: StringType(),
+        DOUBLE: DoubleType(),
+        TIMESTAMP: TimestampType()
     }
 
     iceberg_fields = []
@@ -163,7 +165,7 @@ def read_sql_with_dtypes(engine, table_name):
     
     # Create a dictionary to map SQL types to pandas dtypes
     dtype_map = {
-        'INTEGER': 'int64',
+        'INTEGER': 'int32',
         'BIGINT': 'int64',
         'SMALLINT': 'int32',
         'FLOAT': 'float64',

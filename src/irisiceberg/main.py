@@ -98,8 +98,11 @@ class IcebergIRIS:
         # Load data from IRIS table
         #iris_data = self.iris.load_table_data(tablename)
         for iris_data in read_sql_with_dtypes(self.iris.engine, tablename):
-
+            
+            # Downcast timestamps in the DataFrame
+            iris_data = self.downcast_timestamps(iris_data)
             arrow_data = pa.Table.from_pandas(iris_data)
+            logger.info(arrow_data.schema)
             logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
 
             # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
@@ -142,7 +145,13 @@ class IcebergIRIS:
          table = self.iris.metadata.tables[tablename]
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema
-        
+
+    def downcast_timestamps(self, df):
+        # Convert all datetime64[ns] columns to datetime64[us]
+        for column in df.select_dtypes(include=['datetime64[ns]']).columns:
+            df[column] = df[column].astype('datetime64[us]')
+        return df
+
     def get_table_schema(self, tablename: str):
         # TODO - Use the table metadata to get schema instead of this way which infers from data
         # Iff a column has a ll nulls this will never work
