@@ -38,6 +38,7 @@ def replicate_table(tablename, config_name: str):
     # Show some of the data from the new table
     ice_table = ice.iceberg.load_table(tablename)
     data = ice_table.scan(limit=100).to_pandas()
+    print(ice_table.properties)
     print(data)
 
 if __name__ == "__main__":

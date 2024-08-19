@@ -2,7 +2,8 @@
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from typing import Optional, List
-import iris
+#import iris
+import pyodbc 
 from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect
 from pyiceberg.schema import Schema
 from pyiceberg.types import NestedField
@@ -131,7 +132,7 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
         BIGINT: LongType(),
         FLOAT: FloatType(),
         BOOLEAN: BooleanType(),
-        DATE: DateType(),
+        DATE: TimestampType(), #DateType(),
         DATETIME: TimestampType(),
         String: StringType(),
         TEXT: StringType(),
@@ -192,7 +193,7 @@ def read_sql_with_dtypes(engine, table_name):
     # Read the SQL table into a DataFrame with specified dtypes
     # TODO - MOve chunkSize to config
     query = f"SELECT * FROM {full_table_name}"
-    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=5000):
+    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=2000):
 
         # Convert date and timestamp columns
         for col in columns:

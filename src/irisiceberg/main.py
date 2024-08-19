@@ -99,6 +99,7 @@ class IcebergIRIS:
         #iris_data = self.iris.load_table_data(tablename)
         for iris_data in read_sql_with_dtypes(self.iris.engine, tablename):
             
+            print(f"Read {iris_data.count()} records into pandas")
             # Downcast timestamps in the DataFrame
             iris_data = self.downcast_timestamps(iris_data)
             arrow_data = pa.Table.from_pandas(iris_data)
@@ -116,6 +117,8 @@ class IcebergIRIS:
             TODO - Confirm that the data is also deleted
         2. Load the metadata from source table to create the target schema
         3. Create iceberg schema
+        4. Create the namespace if it does note exist
+        5. Create the table
         '''
 
         # If the table exists, drop it
