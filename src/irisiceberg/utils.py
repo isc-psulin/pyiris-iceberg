@@ -190,7 +190,7 @@ def read_sql_with_dtypes(engine, table_name):
     # Read the SQL table into a DataFrame with specified dtypes
     # TODO - MOve chunkSize to config
     query = f"SELECT * FROM {full_table_name}"
-    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=1000):
+    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=5000):
 
         # Convert date and timestamp columns
         for col in columns:

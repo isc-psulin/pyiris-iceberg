@@ -130,7 +130,12 @@ class IcebergIRIS:
         self.iceberg.catalog.create_namespace_if_not_exists(namespace)
 
         # Create the table
-        table = self.iceberg.catalog.create_table(identifier=tablename,schema=schema)
+        location = self.iceberg.catalog.properties.get("location")
+        if location:
+            table = self.iceberg.catalog.create_table(identifier=tablename,schema=schema, location=location)
+        else:
+            table = self.iceberg.catalog.create_table(identifier=tablename,schema=schema)
+        
         return table 
 
     def create_table_schema(self, tablename: str):

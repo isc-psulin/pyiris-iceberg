@@ -6,19 +6,44 @@ from irisiceberg.utils import Configuration
 sys.path.append("./configs")
 import testing_configs
 
-def create_IRISIceberg():
+def get_config(config_name: str):
+    conf = getattr(testing_configs, config_name)
 
-    target = testing_configs.local_src_azure_target
-    #target = testing_configs.iris_src_local_target
-    config = Configuration(**target)
+    if not conf:
+        print(f"No config named {config_name}")
+        exit()
+    
+    return Configuration(**conf)
+
+def create_IRISIceberg(config: Configuration):
+
     ice = IcebergIRIS("test", config)
     ice.iris.create_engine()
     return ice 
 
-tablename = "FS.AccountMaster"
-iris_ice = create_IRISIceberg()
-iris_ice.initial_table_sync(tablename)
 
-ice_table = iris_ice.iceberg.load_table(tablename)
-data = ice_table.scan().to_pandas()
-print(data)
+def delete_table(tablename: str, config_name: str):
+    
+    config = get_config(config_name)
+    ice = create_IRISIceberg(config)
+    ice.iceberg.catalog.purge_table(tablename)
+
+
+def replicate_table(tablename, config_name: str):
+
+    config = get_config(config_name)
+    ice = create_IRISIceberg(config)
+    ice.initial_table_sync(tablename)
+
+    # Show some of the data from the new table
+    ice_table = ice.iceberg.load_table(tablename)
+    data = ice_table.scan(limit=100).to_pandas()
+    print(data)
+
+if __name__ == "__main__":
+    print(sys.argv)
+    command = sys.argv[1]
+    args = sys.argv[2:]
+    print(command, *args)
+    func = locals().get(command)
+    func(*args)

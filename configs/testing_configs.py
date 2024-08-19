@@ -34,12 +34,12 @@ base = {
         },
         {
             "name": "Azure",
-            "uri": "sqlite:////tmp/iceberg/pyiceberg_catalog.db",
+            "uri": "iris://_SYSTEM:sys@localhost:1972/USER",
             "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
             "adlfs.account-name": "testiris",
-            "type": "azure",
-            "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
-            "database": "testiris",
+           # "type": "azure",
+           # "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+            #"database": "testiris",
             "location": "abfs://mgb"
         }
         ]
@@ -55,11 +55,11 @@ iris_src_local_target = {
     "target_iceberg": "LocalTesting"
 }
 
-local_src_azure_target = {
+iris_src_azure_target = {
     "src_server": "LocalIRIS",
     "target_iceberg": "Azure"
 }
 
 local_testing.update(base)
 iris_src_local_target.update(base)
-local_src_azure_target.update(base)
+iris_src_azure_target.update(base)
