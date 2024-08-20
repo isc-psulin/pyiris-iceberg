@@ -1,34 +1,47 @@
 import unittest
-from sqlalchemy import inspect
+from sqlalchemy import inspect, create_engine
 from install.create_sql import install_iceberg_catalog_tables
 
 class TestCreateSQL(unittest.TestCase):
-    def test_install_iceberg_catalog_tables(self):
-        # Use SQLite in-memory database for testing
-        connection_string = "sqlite:///:memory:"
-        
-        # Call the function to create tables
-        install_iceberg_catalog_tables(connection_string)
-        
-        # Verify that the tables were created
-        engine = inspect(connection_string).engine
-        inspector = inspect(engine)
-        
+    def setUp(self):
+        self.connection_string = "sqlite:///:memory:"
+        self.engine = create_engine(self.connection_string)
+        install_iceberg_catalog_tables(self.connection_string)
+        self.inspector = inspect(self.engine)
+
+    def tearDown(self):
+        self.engine.dispose()
+
+    def test_tables_created(self):
         expected_tables = ['iceberg_tables', 'iceberg_namespaces']
-        actual_tables = inspector.get_table_names()
-        
+        actual_tables = self.inspector.get_table_names()
         for table in expected_tables:
             self.assertIn(table, actual_tables, f"Table {table} was not created")
-        
-        # Verify the structure of the tables
-        iceberg_tables_columns = [col['name'] for col in inspector.get_columns('iceberg_tables')]
-        iceberg_namespaces_columns = [col['name'] for col in inspector.get_columns('iceberg_namespaces')]
-        
-        expected_iceberg_tables_columns = ['catalog_name', 'table_namespace', 'table_name', 'metadata_location', 'previous_metadata_location']
-        expected_iceberg_namespaces_columns = ['catalog_name', 'namespace', 'properties']
-        
-        self.assertEqual(set(iceberg_tables_columns), set(expected_iceberg_tables_columns), "iceberg_tables structure is incorrect")
-        self.assertEqual(set(iceberg_namespaces_columns), set(expected_iceberg_namespaces_columns), "iceberg_namespaces structure is incorrect")
+
+    def test_iceberg_tables_structure(self):
+        expected_columns = {
+            'catalog_name': {'type': 'VARCHAR', 'nullable': False},
+            'table_namespace': {'type': 'VARCHAR', 'nullable': False},
+            'table_name': {'type': 'VARCHAR', 'nullable': False},
+            'metadata_location': {'type': 'VARCHAR', 'nullable': False},
+            'previous_metadata_location': {'type': 'VARCHAR', 'nullable': True}
+        }
+        self._assert_table_structure('iceberg_tables', expected_columns)
+
+    def test_iceberg_namespaces_structure(self):
+        expected_columns = {
+            'catalog_name': {'type': 'VARCHAR', 'nullable': False},
+            'namespace': {'type': 'VARCHAR', 'nullable': False},
+            'properties': {'type': 'VARCHAR', 'nullable': True}
+        }
+        self._assert_table_structure('iceberg_namespaces', expected_columns)
+
+    def _assert_table_structure(self, table_name, expected_columns):
+        columns = self.inspector.get_columns(table_name)
+        for column in columns:
+            expected = expected_columns[column['name']]
+            self.assertIn(expected['type'], str(column['type']).upper(), f"Incorrect type for {column['name']} in {table_name}")
+            self.assertEqual(expected['nullable'], column['nullable'], f"Incorrect nullable for {column['name']} in {table_name}")
 
 if __name__ == '__main__':
     unittest.main()
