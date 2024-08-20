@@ -4,6 +4,8 @@ import unittest
 from sqlalchemy import inspect, create_engine
 import sys
 import os
+
+# Add the project root to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from install.create_sql import install_iceberg_catalog_tables
 
