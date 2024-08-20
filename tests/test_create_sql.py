@@ -2,7 +2,10 @@
 
 import unittest
 from sqlalchemy import inspect, create_engine
-from ..install.create_sql import install_iceberg_catalog_tables
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from install.create_sql import install_iceberg_catalog_tables
 
 class TestCreateSQL(unittest.TestCase):
     def setUp(self):
