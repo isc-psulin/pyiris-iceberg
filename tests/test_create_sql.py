@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import unittest
 from sqlalchemy import inspect, create_engine
 from install.create_sql import install_iceberg_catalog_tables
