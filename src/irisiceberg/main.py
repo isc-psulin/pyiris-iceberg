@@ -89,7 +89,27 @@ class IcebergIRIS:
         self.iris = IRIS(self.config)
         self.iceberg = Iceberg(self.config)
     
-    def initial_table_sync(self, tablename: str):
+    def update_iceberg_table(self, tablename: str, clause: str = ""):
+        
+        iceberg_table = self.iceberg.load_table(tablename)
+
+        chunksize = self.config.table_chunksize
+        clause = self.config.sql_clause
+
+        # Load data from IRIS table
+        for iris_data in read_sql_with_dtypes(self.iris.engine, tablename, clause=clause, chunksize=chunksize):
+        
+            # Downcast timestamps in the DataFrame
+            iris_data = self.downcast_timestamps(iris_data)
+            arrow_data = pa.Table.from_pandas(iris_data)
+            logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
+
+            # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
+            iceberg_table.append(arrow_data)
+            
+            logger.info(f"Appended to iceberg table")
+
+    def initial_table_sync(self, tablename: str, clause: str = ""):
         
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
@@ -97,19 +117,7 @@ class IcebergIRIS:
 
         # Load data from IRIS table
         #iris_data = self.iris.load_table_data(tablename)
-        for iris_data in read_sql_with_dtypes(self.iris.engine, tablename):
-            
-            print(f"Read {iris_data.count()} records into pandas")
-            # Downcast timestamps in the DataFrame
-            iris_data = self.downcast_timestamps(iris_data)
-            arrow_data = pa.Table.from_pandas(iris_data)
-            logger.info(arrow_data.schema)
-            logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
-
-            # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
-            iceberg_table.append(arrow_data)
-            
-            logger.info(f"Appended to iceberg table")
+        self.update_iceberg_table(tablename=tablename, clause=clause)
 
     def create_iceberg_table(self, tablename: str):
         '''

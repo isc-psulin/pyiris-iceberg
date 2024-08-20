@@ -4,6 +4,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 base = {
+    "table_chunksize": 5000,
+    "sql_clause": "Where CreationDate > '2023-08-09'",
+    "table_name": "FS.SecurityMaster",
     "servers": [
         {
             "name": "LocalTesting",
@@ -37,9 +40,6 @@ base = {
             "uri": "iris://_SYSTEM:sys@localhost:1972/USER",
             "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
             "adlfs.account-name": "testiris",
-           # "type": "azure",
-           # "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
-            #"database": "testiris",
             "location": "abfs://mgb"
         }
         ]
@@ -47,6 +47,8 @@ base = {
 
 local_testing = {
     "src_server": "LocalTesting",
+    "admin_server": "LocalTesting",
+    "catalog_server": "LocalTesting",
     "target_iceberg": "LocalTesting"
 }
 
@@ -59,6 +61,7 @@ iris_src_azure_target = {
     "src_server": "LocalIRIS",
     "target_iceberg": "Azure"
 }
+
 
 local_testing.update(base)
 iris_src_local_target.update(base)

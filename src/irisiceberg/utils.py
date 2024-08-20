@@ -1,6 +1,8 @@
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
+from pydantic_settings import BaseSettings
+
 from typing import Optional, List
 #import iris
 import pyodbc 
@@ -54,7 +56,7 @@ config1 = {
 }
 
 # Pydantic models are used to validate configurations before code is executed
-class MyBaseModel(BaseModel):
+class MyBaseModel(BaseSettings):
    # This allows there to be extra fields
    model_config = ConfigDict(extra='allow', populate_by_name=True)
 
@@ -152,7 +154,7 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
 
     return Schema(*iceberg_fields)
 
-def read_sql_with_dtypes(engine, table_name):
+def read_sql_with_dtypes(engine, table_name, clause: str  = '', chunksize: int = 5000):
  
     # Parse schema and table name
     if '.' in table_name:
@@ -192,8 +194,8 @@ def read_sql_with_dtypes(engine, table_name):
     
     # Read the SQL table into a DataFrame with specified dtypes
     # TODO - MOve chunkSize to config
-    query = f"SELECT * FROM {full_table_name}"
-    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=2000):
+    query = f"SELECT * FROM {full_table_name} {clause}"
+    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=chunksize):
 
         # Convert date and timestamp columns
         for col in columns:
@@ -201,5 +203,3 @@ def read_sql_with_dtypes(engine, table_name):
                 df[col['name']] = pd.to_datetime(df[col['name']])
         
         yield df
-
-    
