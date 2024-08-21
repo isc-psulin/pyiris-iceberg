@@ -103,40 +103,6 @@ class IcebergIRIS:
         self.iris = IRIS(self.config)
         self.iceberg = Iceberg(self.config)
     
-    def load_and_write(self, iceberg_table, sql):
-        """ Read data from a source table and write to an iceberg table"""
-
-        iris_data = utils.downcast_timestamps(iris_data)
-        arrow_data = pa.Table.from_pandas(iris_data)
-        logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
-
-        # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
-        iceberg_table.append(arrow_data)
-        
-        logger.info(f"Appended to iceberg table")
-        
-    def update_iceberg_multi(self, tablename: str, clause: str):
-        """Updates an iceberg table with data determined by the provided clause.
-        This provides the most general and flexible interface for updating data
-        """
-        try:
-            iceberg_table = self.iceberg.load_table(tablename)
-        except pyiceberg.exceptions.NoSuchTableError as ex:
-            logger.error(f"Table {tablename} does not exist: {ex}")
-             
-        partition_size = self.config.table_chunksize
-        clause = self.config.sql_clause
-        row_count, minval, maxval = self.iris.get_table_stats(tablename, clause)
-        
-        sql_statements = split_sql(tablename, minval, maxval, partition_size, row_count, clause)
-        
-        # Run each sql statement in parallell processes with each process reading and writing the data from it's sql
-        # Load the datatypes and columns
-        columns, dtype_map = utils.load_data_type_map(tablename, self.iris.engine)
-        
-        # Load data from IRIS table
-        #for sql in sql_statements:
-        # read_and_write
 
     def update_iceberg_table(self, tablename: str, clause: str = ""):
         
