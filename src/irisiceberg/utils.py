@@ -335,35 +335,41 @@ class SQLAlchemyLogHandler:
             conn.execute(LogEntry.__table__.insert().values(log_entry.__dict__))
             conn.commit()
 
-class LoggingWrapper:
-    def __init__(self, engine, min_db_level="INFO"):
+from loguru import logger
+import sys
+
+class SingletonLogger:
+    _instance = None
+
+    def __new__(cls, engine=None, min_db_level="INFO"):
+        if cls._instance is None:
+            cls._instance = super(SingletonLogger, cls).__new__(cls)
+            cls._instance._initialize(engine, min_db_level)
+        return cls._instance
+
+    def _initialize(self, engine, min_db_level):
         self.logger = logger
-        self.min_db_level = min_db_level
-        
-        # Create the log_entries table
-        Base.metadata.create_all(engine)
-        
-        # Add SQLAlchemy handler
-        db_handler = SQLAlchemyLogHandler(engine)
-        self.logger.add(db_handler.write, level=min_db_level)
+        self.logger.remove()  # Remove default handler
+        self.logger.add(sys.stderr, level="INFO")  # Add console handler
 
-    def log(self, level, message, **kwargs):
-        self.logger.log(level, message, **kwargs)
+        if engine:
+            # Create the log_entries table
+            Base.metadata.create_all(engine)
+            
+            # Add SQLAlchemy handler
+            db_handler = SQLAlchemyLogHandler(engine)
+            self.logger.add(db_handler.write, level=min_db_level)
 
-    def debug(self, message, **kwargs):
-        self.logger.debug(message, **kwargs)
+    def get_logger(self):
+        return self.logger
 
-    def info(self, message, **kwargs):
-        self.logger.info(message, **kwargs)
+# Global logger instance
+global_logger = SingletonLogger()
 
-    def warning(self, message, **kwargs):
-        self.logger.warning(message, **kwargs)
+def get_logger():
+    return global_logger.get_logger()
 
-    def error(self, message, **kwargs):
-        self.logger.error(message, **kwargs)
-
-    def critical(self, message, **kwargs):
-        self.logger.critical(message, **kwargs)
-
-def create_logger(engine, min_db_level="WARNING"):
-    return LoggingWrapper(engine, min_db_level)
+def initialize_logger(engine, min_db_level="WARNING"):
+    global global_logger
+    global_logger = SingletonLogger(engine, min_db_level)
+    return global_logger.get_logger()
