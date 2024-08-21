@@ -338,12 +338,12 @@ class SQLAlchemyLogHandler:
 
 # Global logger instance
 logger.remove()  # Remove default handler
-logger.add(sys.stderr, level="INFO")  # Add console handler
+logger.add(sys.stderr, level="DEBUG")  # Add console handler
 
 def get_logger():
     return logger
 
-def initialize_logger(engine, min_db_level="WARNING"):
+def initialize_logger(engine, min_db_level="INFO"):
     # Create the log_entries table
     Base.metadata.create_all(engine)
     
