@@ -315,25 +315,25 @@ class LogEntry(SQLModel, table=True):
     function: str
     line: int
 
-class SQLAlchemyLogHandler(logging.Handler):
+class SQLAlchemyLogHandler:
     def __init__(self, engine):
-        super().__init__()
         self.engine = engine
 
-    def emit(self, record):
+    def write(self, message):
+        record = message.record
         log_entry = LogEntry(
-            level=record.levelname,
-            message=record.getMessage(),
-            module=record.module,
-            function=record.funcName,
-            line=record.lineno
+            level=record["level"].name,
+            message=record["message"],
+            module=record["module"],
+            function=record["function"],
+            line=record["line"]
         )
         with self.engine.connect() as conn:
             conn.execute(LogEntry.__table__.insert().values(**log_entry.dict()))
             conn.commit()
 
 class LoggingWrapper:
-    def __init__(self, engine, min_db_level=logging.WARNING):
+    def __init__(self, engine, min_db_level="WARNING"):
         self.logger = logger
         self.min_db_level = min_db_level
         
@@ -342,27 +342,25 @@ class LoggingWrapper:
         
         # Add SQLAlchemy handler
         db_handler = SQLAlchemyLogHandler(engine)
-        db_handler.setLevel(min_db_level)
-        self.logger.add(db_handler)
+        self.logger.add(db_handler.write, level=min_db_level)
 
     def log(self, level, message, **kwargs):
-        log_func = getattr(self.logger, level.lower())
-        log_func(message, **kwargs)
+        self.logger.log(level, message, **kwargs)
 
     def debug(self, message, **kwargs):
-        self.log('DEBUG', message, **kwargs)
+        self.logger.debug(message, **kwargs)
 
     def info(self, message, **kwargs):
-        self.log('INFO', message, **kwargs)
+        self.logger.info(message, **kwargs)
 
     def warning(self, message, **kwargs):
-        self.log('WARNING', message, **kwargs)
+        self.logger.warning(message, **kwargs)
 
     def error(self, message, **kwargs):
-        self.log('ERROR', message, **kwargs)
+        self.logger.error(message, **kwargs)
 
     def critical(self, message, **kwargs):
-        self.log('CRITICAL', message, **kwargs)
+        self.logger.critical(message, **kwargs)
 
-def create_logger(engine, min_db_level=logging.WARNING):
+def create_logger(engine, min_db_level="WARNING"):
     return LoggingWrapper(engine, min_db_level)
