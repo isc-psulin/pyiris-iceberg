@@ -71,7 +71,8 @@ class IRIS:
     def get_table_stats(self, tablename, clause):
         
         partition_fld = self.config.partition_field
-        sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} WHERE {clause}"
+        where = f"WHERE {clause}" if clause else ""
+        sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} {where}"
         df = pd.read_sql(sql, self.connect())
         return int(df['row_count'][0]), int(df['min_val'][0]), int(df['max_val'][0])
         
@@ -147,7 +148,6 @@ class IcebergIRIS:
                 action_name="append",
                 tablename=tablename,
                 catalog_name=self.iceberg.catalog.name,
-                catalog_id=self.iceberg.catalog.identifier,
                 src_min_id=iris_data[self.config.partition_field].min(),
                 src_max_id=iris_data[self.config.partition_field].max(),
                 src_timestamp=start_time
