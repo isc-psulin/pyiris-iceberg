@@ -13,8 +13,10 @@ from sqlalchemy import  MetaData, Engine
 # Local package
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
-from irisiceberg.utils import Configuration, IRIS_Config
+from irisiceberg.utils import Configuration, IRIS_Config, IceBergJobs, create_iceberg_jobs_table
 from loguru import logger
+from datetime import datetime
+from sqlalchemy.orm import sessionmaker
 
 # TODO - move this to a config file
 # Used is no config is provided when creating IRISIceberg
@@ -110,9 +112,21 @@ class IcebergIRIS:
         partition_size = self.config.table_chunksize
         clause = self.config.sql_clause
 
+        # Ensure the IceBergJobs table exists
+        create_iceberg_jobs_table(self.iris.engine)
+
+        # Create a session
+        Session = sessionmaker(bind=self.iris.engine)
+        session = Session()
+
         # This is the DB-API library connection
-        #connection = self.iris.engine.connect()
         connection, _ = self.iris.get_odbc_connection()
+        
+        # Get initial stats
+        row_count, min_id, max_id = self.iris.get_table_stats(tablename, clause)
+        
+        start_time = datetime.now()
+
         for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
         
             # Downcast timestamps in the DataFrame
@@ -124,6 +138,27 @@ class IcebergIRIS:
             iceberg_table.append(arrow_data)
             
             logger.info(f"Appended to iceberg table")
+
+        end_time = datetime.now()
+
+        # Record job summary
+        job_summary = IceBergJobs(
+            timestamp=end_time,
+            job_name=f"update_{tablename}",
+            action_name="append",
+            tablename=tablename,
+            catalog_name=self.iceberg.catalog.name,
+            catalog_id=self.iceberg.catalog.identifier,
+            src_min_id=min_id,
+            src_max_id=max_id,
+            src_timestamp=start_time
+        )
+
+        session.add(job_summary)
+        session.commit()
+        session.close()
+
+        logger.info(f"Recorded job summary for {tablename}")
 
     def initial_table_sync(self, tablename: str, clause: str = ""):
         
