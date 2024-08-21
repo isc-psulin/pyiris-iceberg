@@ -5,12 +5,19 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import sessionmaker
 from irisiceberg.utils import Base, get_alchemy_engine, Configuration
 import pandas as pd
+import sys 
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="/Users/psulin/projects/irisiceberg/templates")
 
 # Load configuration
-config = Configuration()  # You might need to adjust this based on how you load your configuration
+sys.path.append("/Users/psulin/projects/irisiceberg/configs")
+import testing_configs
+
+config = getattr(testing_configs, 'iris_src_local_target')
+config = Configuration(**config)
+#config = Configuration(testing_configs.iris_src_local_target)  # You might need to adjust this based on how you load your configuration
+print(f"CONFIG - {config}")
 engine = get_alchemy_engine(config)
 Session = sessionmaker(bind=engine)
 
