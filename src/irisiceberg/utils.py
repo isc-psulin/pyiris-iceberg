@@ -169,56 +169,6 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
 
     return Schema(*iceberg_fields)
 
-# def read_with_dtypes(engine, table_name, sql_statements: list = []):
-    
-#     # Parse schema and table name
-#     if '.' in table_name:
-#         schema, table = table_name.split('.', 1)
-#     else:
-#         schema, table = None, table_name
-    
-#     # Get table metadata
-#     inspector = inspect(engine)
-#     columns = inspector.get_columns(table, schema=schema)
-    
-#     # Create a dictionary to map SQL types to pandas dtypes
-#     dtype_map = {
-#         'INTEGER': 'int32',
-#         'BIGINT': 'int64',
-#         'SMALLINT': 'int32',
-#         'FLOAT': 'float64',
-#         'REAL': 'float32',
-#         'DOUBLE': 'float64',
-#         'NUMERIC': 'float64',
-#         'DECIMAL': 'float64',
-#         'CHAR': 'string',
-#         'VARCHAR': 'string',
-#         'TEXT': 'string',
-#         'DATE': 'datetime64[ns]',
-#         'TIMESTAMP': 'datetime64[ns]',
-#         'BOOLEAN': 'bool',
-#         'TINYINT': 'string'
-#     }
-    
-#     # Create a dictionary of column names and their corresponding pandas dtypes
-#     dtypes = {col['name']: dtype_map.get(str(col['type']).split('(')[0].upper(), 'object') 
-#               for col in columns}
-    
-#     # Construct the full table name for the query
-#     full_table_name = f"{schema+'.' if schema else ''}{table}"
-    
-#     # Read the SQL table into a DataFrame with specified dtypes
-#     # TODO - MOve chunkSize to config
-#     query = f"SELECT * FROM {full_table_name} WHERE {clause}"
-#     for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=chunksize):
-
-#         # Convert date and timestamp columns
-#         for col in columns:
-#             if str(col['type']).upper().startswith(('DATE', 'TIMESTAMP')):
-#                 df[col['name']] = pd.to_datetime(df[col['name']])
-        
-#         yield df
-
 def load_data_type_map(tablename, engine):
     
     if '.' in tablename:
@@ -234,18 +184,8 @@ def load_data_type_map(tablename, engine):
               for col in columns}
     
     return columns, dtypes
-    
-def read_and_write(engine, table_name, sql: str, dtypes:dict, columns, chunksize):
-    
-    pandas_df = pd.read_sql(sql, engine, dtype=dtypes, chunksize=chunksize)
 
-    # Convert date and timestamp columns
-    for col in columns:
-        if str(col['type']).upper().startswith(('DATE', 'TIMESTAMP')):
-            pandas_df[col['name']] = pd.to_datetime(pandas_df[col['name']])
-    
-
-def read_sql_to_df(engine, table_name, clause: str = '', chunksize: int = 5000, metadata: MetaData = None):
+def read_sql_to_df(connection, table_name, clause: str = '', chunksize: int = 5000, metadata: MetaData = None):
     
     columns = metadata.tables.get(table_name).columns
 
@@ -256,7 +196,7 @@ def read_sql_to_df(engine, table_name, clause: str = '', chunksize: int = 5000, 
     query = f"SELECT * FROM {table_name} {where}"
     logger.debug(f"Query: {query}")
     
-    for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=chunksize):
+    for df in pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize):
         for col in columns:
             if str(col.type).upper().startswith(('DATE', 'TIMESTAMP')):
                 df[col.name] = pd.to_datetime(df[col.name])

@@ -4,9 +4,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 base = {
-    "table_chunksize": 5000,
-    "sql_clause": "Where CreationDate > '2023-08-09'",
-    "table_name": "FS.SecurityMaster",
+    "table_chunksize": 50000,
+    "sql_clause": "",
+    "table_name": "FS.AccountPosition2",
+    "partition_field": "ID",
     "servers": [
         {
             "name": "LocalTesting",
@@ -25,6 +26,7 @@ base = {
             "user": "_system",
             "port": 1972,
             "schemas": ["FS"],
+            "connection_type": "db-api",
             "field_exclusions": {"table_name": "FS.SecurityMaster", "fields": ["composite_figi"]}
         },
     ],

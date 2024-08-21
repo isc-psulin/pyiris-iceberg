@@ -8,10 +8,11 @@ import pyiceberg
 import pandas as pd
 import pyarrow as pa
 from pyiceberg.catalog.sql import  SqlCatalog
-from sqlalchemy import  MetaData
+from sqlalchemy import  MetaData, Engine
 
 # Local package
-from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_with_dtypes
+import irisiceberg.utils as utils
+from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
 from irisiceberg.utils import Configuration, IRIS_Config
 from loguru import logger
 
@@ -29,6 +30,11 @@ class IRIS:
     def create_engine(self):
         self.engine = get_alchemy_engine(self.config)
     
+    def get_odbc_connection(self):
+        server = utils.get_from_list(self.config.servers, self.config.src_server)
+        conn = utils.get_odbc_connection(server)
+        return conn
+
     def connect(self): # -> Connection
         if not self.engine:
             self.engine = get_alchemy_engine(self.config)
@@ -38,6 +44,7 @@ class IRIS:
         self.engine.close()
 
     def load_table_data(self, tablename):
+        """Deprecated"""
         # Really big assumption that this all fits into memory!
         # TODO - change this tinto a generator
         iris_data = pd.read_sql(f"select * from {tablename}", self.connect())
@@ -59,6 +66,13 @@ class IRIS:
                 # If the chemas list is empty, load from default schema
                 self.metadata.reflect(self.engine)
 
+    def get_table_stats(self, tablename, clause):
+        
+        partition_fld = self.config.partition_field
+        sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} WHERE {clause}"
+        df = pd.read_sql(sql, self.connect())
+        return int(df['row_count'][0]), int(df['min_val'][0]), int(df['max_val'][0])
+        
 class Iceberg():
     def __init__(self, config: Configuration):
         self.config = config
@@ -88,19 +102,21 @@ class IcebergIRIS:
 
         self.iris = IRIS(self.config)
         self.iceberg = Iceberg(self.config)
-    
+
     def update_iceberg_table(self, tablename: str, clause: str = ""):
         
         iceberg_table = self.iceberg.load_table(tablename)
-
-        chunksize = self.config.table_chunksize
+        partition_size = self.config.table_chunksize
         clause = self.config.sql_clause
 
+        print(self.iris.metadata)
         # Load data from IRIS table
-        for iris_data in read_sql_with_dtypes(self.iris.engine, tablename, clause=clause, chunksize=chunksize):
+        #connection = self.iris.engine.connect()
+        connection, _ = self.iris.get_odbc_connection()
+        for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
         
             # Downcast timestamps in the DataFrame
-            iris_data = self.downcast_timestamps(iris_data)
+            iris_data = utils.downcast_timestamps(iris_data)
             arrow_data = pa.Table.from_pandas(iris_data)
             logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
 
@@ -156,12 +172,6 @@ class IcebergIRIS:
          table = self.iris.metadata.tables[tablename]
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema
-
-    def downcast_timestamps(self, df):
-        # Convert all datetime64[ns] columns to datetime64[us]
-        for column in df.select_dtypes(include=['datetime64[ns]']).columns:
-            df[column] = df[column].astype('datetime64[us]')
-        return df
 
     def get_table_schema(self, tablename: str):
         # TODO - Use the table metadata to get schema instead of this way which infers from data
