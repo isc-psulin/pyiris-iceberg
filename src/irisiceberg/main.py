@@ -135,12 +135,12 @@ class IcebergIRIS:
             # Downcast timestamps in the DataFrame
             iris_data = utils.downcast_timestamps(iris_data)
             arrow_data = pa.Table.from_pandas(iris_data)
-            logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
+            self.iris.logger.info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
 
             # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
             iceberg_table.append(arrow_data)
             
-            logger.info(f"Appended to iceberg table")
+            self.iris.logger.info(f"Appended to iceberg table")
 
             # Record job summary for each append operation
             end_time = datetime.now()
@@ -161,13 +161,13 @@ class IcebergIRIS:
 
         session.close()
 
-        logger.info(f"Completed updating and recording job summaries for {tablename}")
+        self.iris.logger.info(f"Completed updating and recording job summaries for {tablename}")
 
     def initial_table_sync(self, tablename: str, clause: str = ""):
         
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
-        logger.info(f"Created table {tablename}")
+        self.iris.logger.info(f"Created table {tablename}")
 
         # Load data from IRIS table
         #iris_data = self.iris.load_table_data(tablename)
