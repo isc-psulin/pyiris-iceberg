@@ -1,7 +1,3 @@
-# Standard Python 
-# TODO - Add a handler to log to an IRIS table
-import logging
-
 # Third party
 import pyiceberg.table
 import pyiceberg
