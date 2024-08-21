@@ -333,7 +333,7 @@ class SQLAlchemyLogHandler:
             conn.commit()
 
 class LoggingWrapper:
-    def __init__(self, engine, min_db_level="WARNING"):
+    def __init__(self, engine, min_db_level="INFO"):
         self.logger = logger
         self.min_db_level = min_db_level
         
