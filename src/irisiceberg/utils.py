@@ -319,9 +319,12 @@ class LogEntry(Base):
     function = Column(String)
     line = Column(Integer)
 
+from sqlalchemy.orm import sessionmaker
+
 class SQLAlchemyLogHandler:
     def __init__(self, engine):
         self.engine = engine
+        self.Session = sessionmaker(bind=engine)
 
     def write(self, message):
         record = message.record
@@ -332,9 +335,9 @@ class SQLAlchemyLogHandler:
             function=record["function"],
             line=record["line"]
         )
-        with self.engine.connect() as conn:
-            conn.execute(LogEntry.__table__.insert().values(log_entry.__dict__))
-            conn.commit()
+        with self.Session() as session:
+            session.add(log_entry)
+            session.commit()
 
 # Global logger instance
 logger.remove()  # Remove default handler
