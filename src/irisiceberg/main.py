@@ -110,8 +110,7 @@ class IcebergIRIS:
         partition_size = self.config.table_chunksize
         clause = self.config.sql_clause
 
-        print(self.iris.metadata)
-        # Load data from IRIS table
+        # This is the DB-API library connection
         #connection = self.iris.engine.connect()
         connection, _ = self.iris.get_odbc_connection()
         for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
