@@ -247,30 +247,27 @@ def read_and_write(engine, table_name, sql: str, dtypes:dict, columns, chunksize
 
 def read_sql_to_df(engine, table_name, clause: str  = '', chunksize: int = 5000, metadata: MetaData = None):
     
-    if '.' in table_name:
-        schema, table = table_name.split('.', 1)
-    else:
-        schema, table = None, table_name
+    # if '.' in table_name:
+    #     schema, table = table_name.split('.', 1)
+    # else:
+    #     schema, table = None, table_name
     
-    # Get table metadata
-    inspector = inspect(engine)
-    columns = inspector.get_columns(table, schema=schema)
-    cols2 = metadata.tables.get(table_name).columns
+    columns = metadata.tables.get(table_name).columns
 
-    print(columns)
-    print(dict(cols2))
+    # print(columns)
+    # print(dict(cols2))
 
     # Create a dictionary of column names and their corresponding pandas dtypes
-    dtypes = {col['name']: sql_to_pandas_typemap.get(str(col['type']).split('(')[0].upper(), 'object') 
-              for col in columns}
+    # dtypes = {col['name']: sql_to_pandas_typemap.get(str(col['type']).split('(')[0].upper(), 'object') 
+    #           for col in columns}
     
     # Create dtypes2 using cols2 that matches dtypes exactly
-    dtypes2 = {col.name: sql_to_pandas_typemap.get(str(col.type).split('(')[0].upper(), 'object') 
-               for col in cols2}
+    dtypes = {col.name: sql_to_pandas_typemap.get(str(col.type).split('(')[0].upper(), 'object') 
+               for col in columns}
     
-    # Construct the full table name for the query
-    full_table_name = f"{schema+'.' if schema else ''}{table}"
-    
+    #print(dtypes)
+    #print(dtypes2)
+
     # Read the SQL table into a DataFrame with specified dtypes
     # TODO - MOve chunkSize to config
     where = f"WHERE {clause}" if clause else ''
