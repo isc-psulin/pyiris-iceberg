@@ -13,7 +13,7 @@ from sqlalchemy import  MetaData, Engine
 # Local package
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
-from irisiceberg.utils import Configuration, IRIS_Config, IceBergJobs, create_iceberg_jobs_table, LoggingWrapper
+from irisiceberg.utils import Configuration, IRIS_Config, IceBergJobs, create_iceberg_jobs_table, create_logger
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
 
@@ -31,8 +31,7 @@ class IRIS:
 
     def create_engine(self):
         self.engine = get_alchemy_engine(self.config)
-        self.logger = LoggingWrapper(self.engine)
-        self.engine = get_alchemy_engine(self.config)
+        self.logger = create_logger(self.engine)
     
     def get_odbc_connection(self):
         server = utils.get_from_list(self.config.servers, self.config.src_server)

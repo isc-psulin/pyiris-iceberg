@@ -363,3 +363,6 @@ class LoggingWrapper:
 
     def critical(self, message, **kwargs):
         self.log('CRITICAL', message, **kwargs)
+
+def create_logger(engine, min_db_level=logging.WARNING):
+    return LoggingWrapper(engine, min_db_level)
