@@ -30,6 +30,11 @@ async def root(request: Request):
             with Session() as session:
                 query = session.query(Base.metadata.tables[table_name])
                 df = pd.read_sql(query.statement, session.bind)
+                
+                # Convert Timestamp columns to strings
+                for col in df.select_dtypes(include=['datetime64']).columns:
+                    df[col] = df[col].astype(str)
+                
                 tables.append({
                     "name": table_name,
                     "data": df.to_dict(orient="records"),
