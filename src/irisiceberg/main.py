@@ -139,26 +139,27 @@ class IcebergIRIS:
             
             logger.info(f"Appended to iceberg table")
 
-        end_time = datetime.now()
+            # Record job summary for each append operation
+            end_time = datetime.now()
+            job_summary = IceBergJobs(
+                timestamp=end_time,
+                job_name=f"update_{tablename}",
+                action_name="append",
+                tablename=tablename,
+                catalog_name=self.iceberg.catalog.name,
+                catalog_id=self.iceberg.catalog.identifier,
+                src_min_id=iris_data[self.config.partition_field].min(),
+                src_max_id=iris_data[self.config.partition_field].max(),
+                src_timestamp=start_time
+            )
+            session.add(job_summary)
+            session.commit()
 
-        # Record job summary
-        job_summary = IceBergJobs(
-            timestamp=end_time,
-            job_name=f"update_{tablename}",
-            action_name="append",
-            tablename=tablename,
-            catalog_name=self.iceberg.catalog.name,
-            catalog_id=self.iceberg.catalog.identifier,
-            src_min_id=min_id,
-            src_max_id=max_id,
-            src_timestamp=start_time
-        )
+            start_time = end_time  # Update start_time for the next iteration
 
-        session.add(job_summary)
-        session.commit()
         session.close()
 
-        logger.info(f"Recorded job summary for {tablename}")
+        logger.info(f"Completed updating and recording job summaries for {tablename}")
 
     def initial_table_sync(self, tablename: str, clause: str = ""):
         
