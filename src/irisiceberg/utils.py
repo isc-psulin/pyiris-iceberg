@@ -336,38 +336,18 @@ class SQLAlchemyLogHandler:
             conn.execute(LogEntry.__table__.insert().values(log_entry.__dict__))
             conn.commit()
 
-class SingletonLogger:
-    _instance = None
-
-    def __new__(cls, engine=None, min_db_level="INFO"):
-        if cls._instance is None:
-            cls._instance = super(SingletonLogger, cls).__new__(cls)
-            cls._instance._initialize(engine, min_db_level)
-        return cls._instance
-
-    def _initialize(self, engine, min_db_level):
-        self.logger = logger
-        self.logger.remove()  # Remove default handler
-        self.logger.add(sys.stderr, level="INFO")  # Add console handler
-
-        if engine:
-            # Create the log_entries table
-            Base.metadata.create_all(engine)
-            
-            # Add SQLAlchemy handler
-            db_handler = SQLAlchemyLogHandler(engine)
-            self.logger.add(db_handler.write, level=min_db_level)
-
-    def get_logger(self):
-        return self.logger
-
 # Global logger instance
-global_logger = SingletonLogger()
+logger.remove()  # Remove default handler
+logger.add(sys.stderr, level="INFO")  # Add console handler
 
 def get_logger():
-    return global_logger.get_logger()
+    return logger
 
 def initialize_logger(engine, min_db_level="WARNING"):
-    global global_logger
-    global_logger = SingletonLogger(engine, min_db_level)
-    return global_logger.get_logger()
+    # Create the log_entries table
+    Base.metadata.create_all(engine)
+    
+    # Add SQLAlchemy handler
+    db_handler = SQLAlchemyLogHandler(engine)
+    logger.add(db_handler.write, level=min_db_level)
+    return logger
