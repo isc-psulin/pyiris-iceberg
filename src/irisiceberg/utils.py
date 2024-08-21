@@ -245,40 +245,21 @@ def read_and_write(engine, table_name, sql: str, dtypes:dict, columns, chunksize
             pandas_df[col['name']] = pd.to_datetime(pandas_df[col['name']])
     
 
-def read_sql_to_df(engine, table_name, clause: str  = '', chunksize: int = 5000, metadata: MetaData = None):
-    
-    # if '.' in table_name:
-    #     schema, table = table_name.split('.', 1)
-    # else:
-    #     schema, table = None, table_name
+def read_sql_to_df(engine, table_name, clause: str = '', chunksize: int = 5000, metadata: MetaData = None):
     
     columns = metadata.tables.get(table_name).columns
 
-    # print(columns)
-    # print(dict(cols2))
-
-    # Create a dictionary of column names and their corresponding pandas dtypes
-    # dtypes = {col['name']: sql_to_pandas_typemap.get(str(col['type']).split('(')[0].upper(), 'object') 
-    #           for col in columns}
-    
-    # Create dtypes2 using cols2 that matches dtypes exactly
     dtypes = {col.name: sql_to_pandas_typemap.get(str(col.type).split('(')[0].upper(), 'object') 
-               for col in columns}
+              for col in columns}
     
-    #print(dtypes)
-    #print(dtypes2)
-
-    # Read the SQL table into a DataFrame with specified dtypes
-    # TODO - MOve chunkSize to config
     where = f"WHERE {clause}" if clause else ''
     query = f"SELECT * FROM {table_name} {where}"
     logger.debug(f"Query: {query}")
+    
     for df in pd.read_sql(query, engine, dtype=dtypes, chunksize=chunksize):
-
-        # Convert date and timestamp columns
         for col in columns:
-            if str(col['type']).upper().startswith(('DATE', 'TIMESTAMP')):
-                df[col['name']] = pd.to_datetime(df[col['name']])
+            if str(col.type).upper().startswith(('DATE', 'TIMESTAMP')):
+                df[col.name] = pd.to_datetime(df[col.name])
         
         yield df
 
