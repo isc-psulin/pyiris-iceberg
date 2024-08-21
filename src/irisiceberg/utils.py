@@ -7,7 +7,8 @@ from typing import Iterable, Optional, List
 
 import iris
 
-from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect
+from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger
+from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
 from pyiceberg.types import NestedField
 import pytest
@@ -281,3 +282,22 @@ def downcast_timestamps(df):
         for column in df.select_dtypes(include=['datetime64[ns]']).columns:
             df[column] = df[column].astype('datetime64[us]')
         return df
+
+Base = declarative_base()
+
+class IceBergJobs(Base):
+    __tablename__ = 'iceberg_jobs'
+
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime)
+    job_name = Column(String)
+    action_name = Column(String)
+    tablename = Column(String)
+    catalog_name = Column(String)
+    catalog_id = Column(String)
+    src_min_id = Column(BigInteger)
+    src_max_id = Column(BigInteger)
+    src_timestamp = Column(DateTime)
+
+def create_iceberg_jobs_table(engine):
+    Base.metadata.create_all(engine)
