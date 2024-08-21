@@ -8,12 +8,16 @@
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js"></script>
 </head>
 <body>
+    <script>
+        var tableHeight = 400; // Set the default height for all tables (in pixels)
+    </script>
     {% for table in tables %}
         <h2>{{ table.name }}</h2>
         <div id="{{ table.name }}-table"></div>
         <script>
             var tableData = {{ table.data | tojson | safe }};
             var table = new Tabulator("#{{ table.name }}-table", {
+                height: tableHeight,
                 data: tableData,
                 columns: [
                     {% for column in table.columns %}
