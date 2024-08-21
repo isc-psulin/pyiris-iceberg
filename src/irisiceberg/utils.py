@@ -1,4 +1,5 @@
 import math 
+import sys
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
@@ -334,9 +335,6 @@ class SQLAlchemyLogHandler:
         with self.engine.connect() as conn:
             conn.execute(LogEntry.__table__.insert().values(log_entry.__dict__))
             conn.commit()
-
-from loguru import logger
-import sys
 
 class SingletonLogger:
     _instance = None
