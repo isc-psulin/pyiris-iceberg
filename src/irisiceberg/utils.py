@@ -264,6 +264,10 @@ def read_sql_to_df(engine, table_name, clause: str  = '', chunksize: int = 5000,
     dtypes = {col['name']: sql_to_pandas_typemap.get(str(col['type']).split('(')[0].upper(), 'object') 
               for col in columns}
     
+    # Create dtypes2 using cols2 that matches dtypes exactly
+    dtypes2 = {col.name: sql_to_pandas_typemap.get(str(col.type).split('(')[0].upper(), 'object') 
+               for col in cols2}
+    
     # Construct the full table name for the query
     full_table_name = f"{schema+'.' if schema else ''}{table}"
     
