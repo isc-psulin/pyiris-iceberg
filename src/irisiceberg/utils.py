@@ -14,9 +14,12 @@ from pyiceberg.types import NestedField
 import pytest
 import pandas as pd
 from loguru import logger
-from sqlmodel import SQLModel, Field
+from sqlalchemy.orm import declarative_base
 import logging
 from datetime import datetime
+
+# Create a Base class for declarative models
+Base = declarative_base()
 
 # Create a dictionary to map SQL types to pandas dtypes
 sql_to_pandas_typemap = {
@@ -304,16 +307,16 @@ class IceBergJobs(Base):
 def create_iceberg_jobs_table(engine):
     Base.metadata.create_all(engine)
 
-class LogEntry(SQLModel, table=True):
+class LogEntry(Base):
     __tablename__ = "log_entries"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-    level: str
-    message: str
-    module: str
-    function: str
-    line: int
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    level = Column(String)
+    message = Column(String)
+    module = Column(String)
+    function = Column(String)
+    line = Column(Integer)
 
 class SQLAlchemyLogHandler:
     def __init__(self, engine):
@@ -329,7 +332,7 @@ class SQLAlchemyLogHandler:
             line=record["line"]
         )
         with self.engine.connect() as conn:
-            conn.execute(LogEntry.__table__.insert().values(**log_entry.dict()))
+            conn.execute(LogEntry.__table__.insert().values(log_entry.__dict__))
             conn.commit()
 
 class LoggingWrapper:
@@ -338,7 +341,7 @@ class LoggingWrapper:
         self.min_db_level = min_db_level
         
         # Create the log_entries table
-        LogEntry.metadata.create_all(engine)
+        Base.metadata.create_all(engine)
         
         # Add SQLAlchemy handler
         db_handler = SQLAlchemyLogHandler(engine)
