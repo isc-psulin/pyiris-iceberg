@@ -313,10 +313,10 @@ class LogEntry(Base):
 
     id = Column(Integer, primary_key=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
-    level = Column(String)
-    message = Column(String)
-    module = Column(String)
-    function = Column(String)
+    level = Column(String(500))
+    message = Column(String(500))
+    module = Column(String(500))
+    function = Column(String(500))
     line = Column(Integer)
 
 from sqlalchemy.orm import sessionmaker
