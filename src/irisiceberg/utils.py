@@ -14,8 +14,11 @@ from pyiceberg.types import NestedField
 import pytest
 import pandas as pd
 from loguru import logger
+from sqlmodel import SQLModel, Field
+import logging
+from datetime import datetime
 
- # Create a dictionary to map SQL types to pandas dtypes
+# Create a dictionary to map SQL types to pandas dtypes
 sql_to_pandas_typemap = {
         'INTEGER': 'int32',
         'BIGINT': 'int64',
@@ -300,3 +303,63 @@ class IceBergJobs(Base):
 
 def create_iceberg_jobs_table(engine):
     Base.metadata.create_all(engine)
+
+class LogEntry(SQLModel, table=True):
+    __tablename__ = "log_entries"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    level: str
+    message: str
+    module: str
+    function: str
+    line: int
+
+class SQLAlchemyLogHandler(logging.Handler):
+    def __init__(self, engine):
+        super().__init__()
+        self.engine = engine
+
+    def emit(self, record):
+        log_entry = LogEntry(
+            level=record.levelname,
+            message=record.getMessage(),
+            module=record.module,
+            function=record.funcName,
+            line=record.lineno
+        )
+        with self.engine.connect() as conn:
+            conn.execute(LogEntry.__table__.insert().values(**log_entry.dict()))
+            conn.commit()
+
+class LoggingWrapper:
+    def __init__(self, engine, min_db_level=logging.WARNING):
+        self.logger = logger
+        self.min_db_level = min_db_level
+        
+        # Create the log_entries table
+        LogEntry.metadata.create_all(engine)
+        
+        # Add SQLAlchemy handler
+        db_handler = SQLAlchemyLogHandler(engine)
+        db_handler.setLevel(min_db_level)
+        self.logger.add(db_handler)
+
+    def log(self, level, message, **kwargs):
+        log_func = getattr(self.logger, level.lower())
+        log_func(message, **kwargs)
+
+    def debug(self, message, **kwargs):
+        self.log('DEBUG', message, **kwargs)
+
+    def info(self, message, **kwargs):
+        self.log('INFO', message, **kwargs)
+
+    def warning(self, message, **kwargs):
+        self.log('WARNING', message, **kwargs)
+
+    def error(self, message, **kwargs):
+        self.log('ERROR', message, **kwargs)
+
+    def critical(self, message, **kwargs):
+        self.log('CRITICAL', message, **kwargs)

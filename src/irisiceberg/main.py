@@ -13,8 +13,7 @@ from sqlalchemy import  MetaData, Engine
 # Local package
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
-from irisiceberg.utils import Configuration, IRIS_Config, IceBergJobs, create_iceberg_jobs_table
-from loguru import logger
+from irisiceberg.utils import Configuration, IRIS_Config, IceBergJobs, create_iceberg_jobs_table, LoggingWrapper
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
 
@@ -28,8 +27,11 @@ class IRIS:
         self.config = config
         self.engine = None # -> Engine
         self.metadata = None # -> Metadata
+        self.logger = None
 
     def create_engine(self):
+        self.engine = get_alchemy_engine(self.config)
+        self.logger = LoggingWrapper(self.engine)
         self.engine = get_alchemy_engine(self.config)
     
     def get_odbc_connection(self):
@@ -63,10 +65,10 @@ class IRIS:
         if schemas:
             for schema in schemas:
                 self.metadata.reflect(self.engine, schema)
-                logger.debug(f"Getting Metadata for {schema} - {len(self.metadata.tables)} tables in metadata")
-            else:
-                # If the chemas list is empty, load from default schema
-                self.metadata.reflect(self.engine)
+                self.logger.debug(f"Getting Metadata for {schema} - {len(self.metadata.tables)} tables in metadata")
+        else:
+            # If the schemas list is empty, load from default schema
+            self.metadata.reflect(self.engine)
 
     def get_table_stats(self, tablename, clause):
         
