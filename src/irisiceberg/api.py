@@ -34,17 +34,24 @@ async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "tables": tables})
 
 @app.get("/search/{table_name}")
-async def search_table(table_name: str, q: str = Query(None), limit: int = Query(50, ge=1, le=1000)):
+async def search_table(table_name: str, q: str = Query(None), limit: int = Query(500, ge=1, le=1000)):
     if table_name not in Base.metadata.tables:
         return JSONResponse(content={"error": "Table not found"}, status_code=404)
 
     with Session() as session:
-        query = f"""
-        SELECT * FROM {table_name}
-        WHERE {' OR '.join([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])}
-        LIMIT :limit
-        """
-        result = session.execute(text(query), {"search": f"%{q.lower()}%", "limit": limit})
+        if q:
+            query = f"""
+            SELECT * FROM {table_name}
+            WHERE {' OR '.join([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])}
+            LIMIT :limit
+            """
+            result = session.execute(text(query), {"search": f"%{q.lower()}%", "limit": limit})
+        else:
+            query = f"""
+            SELECT * FROM {table_name}
+            LIMIT :limit
+            """
+            result = session.execute(text(query), {"limit": limit})
         
         df = pd.DataFrame(result.fetchall(), columns=result.keys())
         
