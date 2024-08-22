@@ -3,7 +3,7 @@ import sys
 from irisiceberg.main import IcebergIRIS
 import irisiceberg.utils as utils
 
-sys.path.append("./configs")
+sys.path.append("./fixtures")
 import testing_configs
 from pprint import pprint 
 

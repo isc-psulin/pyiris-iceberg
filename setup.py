@@ -9,5 +9,5 @@ setup(name='irisiceberg',
       author_email='psulin@intersystems.com',
       url='',
       package_dir={'':'src'},
-      packages=['irisiceberg'],
+      packages=['irisiceberg', 'tests'],
      )
