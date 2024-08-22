@@ -36,12 +36,25 @@
 
             function performSearch(tableName) {
                 var searchTerm = document.getElementById(tableName + "-search").value;
+                console.log(`Performing search for ${tableName} with term: ${searchTerm}`);
                 fetch(`/search/${tableName}?q=${searchTerm}`)
-                    .then(response => response.json())
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log(`Received data for ${tableName}:`, data);
+                        if (data.length === 0) {
+                            console.log(`No data returned for ${tableName}`);
+                        }
                         table.setData(data);
                     })
-                    .catch(error => console.error('Error:', error));
+                    .catch(error => {
+                        console.error(`Error fetching data for ${tableName}:`, error);
+                        alert(`Error fetching data for ${tableName}: ${error.message}`);
+                    });
             }
 
             document.getElementById("{{ table.name }}-search-btn").addEventListener("click", function(){
@@ -55,6 +68,7 @@
             });
 
             // Initial load
+            console.log("Performing initial load for {{ table.name }}");
             performSearch("{{ table.name }}");
         </script>
     {% endfor %}
