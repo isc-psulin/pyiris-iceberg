@@ -294,16 +294,25 @@ class IcebergJob(Base):
     __tablename__ = 'iceberg_jobs'
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime)
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)
     job_name = Column(String(100))
     action_name = Column(String(100))
     tablename = Column(String(100))
     catalog_name = Column(String(100))
+
+class IcebergJobStep(Base):
+    __tablename__ = 'iceberg_job_steps'
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(Integer, ForeignKey('iceberg_jobs.id'))
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)
     src_min_id = Column(BigInteger)
     src_max_id = Column(BigInteger)
     src_timestamp = Column(DateTime)
 
-def create_iceberg_jobs_table(engine):
+def create_iceberg_tables(engine):
     Base.metadata.create_all(engine)
 
 class LogEntry(Base):
