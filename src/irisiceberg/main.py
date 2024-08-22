@@ -10,7 +10,7 @@ from sqlalchemy import  MetaData, Engine
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
 from irisiceberg.utils import create_iceberg_jobs_table, initialize_logger, get_logger, logger
-from irisiceberg.models import Configuration, IRIS_Config, IceBergJobs
+from irisiceberg.utils import Configuration, IRIS_Config, IcebergJob
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
 
@@ -91,6 +91,8 @@ class Iceberg():
         table = self.catalog.load_table(tablename)
         return table
 
+    
+
 class IcebergIRIS:
     def __init__(self, name: str = "", config: Configuration = None):
         self.name = name
@@ -104,7 +106,6 @@ class IcebergIRIS:
         self.iris = IRIS(self.config)
         self.iceberg = Iceberg(self.config)
     
-
     def update_iceberg_table(self, tablename: str, clause: str = ""):
         
         iceberg_table = self.iceberg.load_table(tablename)
@@ -140,7 +141,7 @@ class IcebergIRIS:
 
             # Record job summary for each append operation
             end_time = datetime.now()
-            job_summary = IceBergJobs(
+            job_summary = IcebergJob(
                 timestamp=end_time,
                 job_name=f"update_{tablename}",
                 action_name="append",
@@ -168,6 +169,15 @@ class IcebergIRIS:
         # Load data from IRIS table
         #iris_data = self.iris.load_table_data(tablename)
         self.update_iceberg_table(tablename=tablename, clause=clause)
+
+    def purge_table(self, tablename: str):
+        '''
+        Purge the table from iceberg
+        '''
+        try:
+            self.catalog.purge_table(tablename)
+        except pyiceberg.exceptions.NoSuchTableError as ex:
+            get_logger().error(f"Cannot purge table {tablename}:  {ex}")
 
     def create_iceberg_table(self, tablename: str):
         '''
@@ -206,19 +216,7 @@ class IcebergIRIS:
          table = self.iris.metadata.tables[tablename]
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema
-
-    def get_table_schema(self, tablename: str):
-        # TODO - Use the table metadata to get schema instead of this way which infers from data
-        # Iff a column has a ll nulls this will never work
-
-        #metadata = self.iris.engine.
-        # Load some data from the table to get the schema
-        table_data = pd.read_sql(f"select top 100 * from {tablename}", self.iris.connect())
-        arrow_table = pa.Table.from_pandas(table_data)
-        return arrow_table.schema 
     
     def load_config(self, name: str): 
         raise NotImplementedError
 
-    def sync_table(self):
-        pass

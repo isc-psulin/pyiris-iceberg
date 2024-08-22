@@ -290,7 +290,7 @@ def downcast_timestamps(df):
             df[column] = df[column].astype('datetime64[us]')
         return df
 
-class IceBergJobs(Base):
+class IcebergJob(Base):
     __tablename__ = 'iceberg_jobs'
 
     id = Column(Integer, primary_key=True)
