@@ -8,7 +8,7 @@ from typing import Iterable, Optional, List
 
 import iris
 
-from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger
+from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
 from pyiceberg.types import NestedField
