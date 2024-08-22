@@ -14,7 +14,7 @@ base = {
             "dialect": "sqlite",
             "database": "/tmp/iceberg/test.db",
             "warehouse": "/tmp/iceberg",
-            "connection_type": "sqlite",
+             "connection_type": "sqlite",
             "schemas": [],
         },
         {
@@ -27,7 +27,8 @@ base = {
             "user": "_system",
             "port": 1972,
             "schemas": ["FS"],
-            "connection_type": "db-api"
+            "connection_type": "db-api",
+            "field_exclusions": {"table_name": "FS.SecurityMaster", "fields": ["composite_figi"]}
         },
     ],
      "icebergs": [

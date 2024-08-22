@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
@@ -9,6 +10,7 @@ import sys
 
 app = FastAPI()
 templates = Jinja2Templates(directory="/Users/psulin/projects/irisiceberg/templates")
+
 
 # Load configuration
 sys.path.append("/Users/psulin/projects/irisiceberg/configs")

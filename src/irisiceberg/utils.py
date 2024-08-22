@@ -326,7 +326,7 @@ class LogEntry(Base):
     __tablename__ = "log_entries"
 
     id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey('iceberg_job.id'), nullable=True)
+    job_id = Column(Integer, nullable=True)
     log_time = Column(DateTime, default=datetime.utcnow)
     level = Column(String(500))
     message = Column(String(500))

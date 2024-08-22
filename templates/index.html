@@ -24,8 +24,16 @@
         <div id="{{ table.name }}-table"></div>
     {% endfor %}
 
+    <!-- <script type="module">
+        //import { sayHello, PI } from './myModule.js';
+        import {SelectRangeModule} from 'https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js';
+
+         
+    </script> -->
+
     <script>
         
+
         var selectedJobId = null;
 
         {% for table in tables %}
@@ -35,26 +43,28 @@
                     layout: "fitColumns",
                     pagination: "local",
                     paginationSize: 50,
-                    selectableRows: true,
                     columns: [
                         {% for column in table.columns %}
-                            {title: "{{ column }}", field: "{{ column }}"},
+                            {title: "{{ column }}", field: "{{ column }}", headerFilter:true },
                         {% endfor %}
                     ],
+                    
                     {% if table.name == 'iceberg_job' %}
                     selectable: 1,
-                    rowClick: function(e, row) {
-                        selectedJobId = row.getData().id;
-                        performSearchiceberg_job_step(selectedJobId);
-                        performSearchlog_entries(selectedJobId);
-                        console.log("Selected job ID:", selectedJobId);
-                        // Trigger search for iceberg_job_step and log_entries tables
-                        document.getElementById("iceberg_job_step-search-btn").click();
-                        document.getElementById("log_entries-search-btn").click();
-                    },
+                    
+                //   ({{ table.name }}Table).on('rowClick', function (e, row){
+                //         selectedJobId = row.getData().id;
+                //          performSearchiceberg_job_step(selectedJobId);
+                //          performSearchlog_entries(selectedJobId);
+                //          console.log("Selected job ID:", selectedJobId);
+                //          // Trigger search for iceberg_job_step and log_entries tables
+                //          document.getElementById("iceberg_job_step-search-btn").click();
+                //          document.getElementById("log_entries-search-btn").click();
+                //     }) 
                     {% endif %}
                 });
-
+                
+                 
                 function performSearch{{ table.name }}(jobId = null) {
                     var searchTerm = document.getElementById("{{ table.name }}-search").value;
                     var url = `/search/{{ table.name }}?q=${searchTerm}`;

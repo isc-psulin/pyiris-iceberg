@@ -7,6 +7,7 @@ import pandas as pd
 import pyarrow as pa
 from pyiceberg.catalog.sql import  SqlCatalog
 from sqlalchemy import  MetaData, Engine
+from sqlalchemy.orm import Session
 
 # Local package
 import irisiceberg.utils as utils
@@ -110,7 +111,7 @@ class IcebergIRIS:
         self.iris = IRIS(self.config)
         self.iceberg = Iceberg(self.config)
     
-    def update_iceberg_table(self, tablename: str, clause: str = "", job: IcebergJob = None):
+    def update_iceberg_table(self, tablename: str, session: Session, clause: str = "",  job: IcebergJob = None):
         
         iceberg_table = self.iceberg.load_table(tablename)
         if iceberg_table is None:
@@ -151,6 +152,7 @@ class IcebergIRIS:
 
         # TODO - This should be set by the config so it can use DB-API or odbc
         connection, _ = self.iris.get_odbc_connection()
+        
         for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
         
             step_start_time = datetime.now()
@@ -164,10 +166,6 @@ class IcebergIRIS:
             iceberg_table.append(arrow_data)
             
             get_logger().info(f"Appended to iceberg table")
-
-            # Create a session
-            Session = sessionmaker(bind=self.iris.engine)
-            session = Session()
 
             # Record job step
             step_end_time = datetime.now()
@@ -184,8 +182,6 @@ class IcebergIRIS:
 
         # Update the main job record with the end time
         job.end_time = datetime.now()
-        session = Session()
-        session.merge(job)
         session.commit()
         session.close()
 
@@ -203,28 +199,27 @@ class IcebergIRIS:
         Session = sessionmaker(bind=self.iris.engine)
         session = Session()
 
-        with session:
-            job_start_time = datetime.now()
+        job_start_time = datetime.now()
 
-            # Create the main job record
-            job = IcebergJob(
-                start_time=job_start_time,
-                job_name=f"initial_sync_{tablename}",
-                action_name="initial_sync",
-                tablename=tablename,
-                catalog_name=self.iceberg.catalog.name
-            )
-            session.add(job)
-            session.flush()  # This will populate the job.id
-            
-            #session.refresh(job)
+        # Create the main job record
+        job = IcebergJob(
+            start_time=job_start_time,
+            job_name=f"initial_sync_{tablename}",
+            action_name="initial_sync",
+            tablename=tablename,
+            catalog_name=self.iceberg.catalog.name
+        )
+        session.add(job)
+        session.flush()  # This will populate the job.id
+        print(f"Job - {job} {job.id}")
+        #session.refresh(job)
          
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
         get_logger().info(f"Created table {tablename}")
 
         # Load data from IRIS table
-        self.update_iceberg_table(tablename=tablename, clause=clause, job=job)
+        self.update_iceberg_table(tablename=tablename, clause=clause, job=job, session=session)
 
         # Update the main job record with the end time
         job.end_time = datetime.now()
