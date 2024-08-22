@@ -31,7 +31,6 @@
         {% for table in tables %}
             (function() {
                 var {{ table.name }}Table = new Tabulator("#{{ table.name }}-table", {
-                    modules:[Tabulator.SelectRow],
                     height: 400,
                     layout: "fitColumns",
                     pagination: "local",
@@ -48,7 +47,7 @@
                         selectedJobId = row.getData().id;
                         performSearchiceberg_job_step(selectedJobId);
                         performSearchlog_entries(selectedJobId);
-                        console.log("Selected {{ row }}")
+                        console.log("Selected job ID:", selectedJobId);
                         // Trigger search for iceberg_job_step and log_entries tables
                         document.getElementById("iceberg_job_step-search-btn").click();
                         document.getElementById("log_entries-search-btn").click();
