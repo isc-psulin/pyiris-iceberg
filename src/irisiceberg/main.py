@@ -133,7 +133,9 @@ class IcebergIRIS:
             job_name=f"update_{tablename}",
             action_name="append",
             tablename=tablename,
-            catalog_name=self.iceberg.catalog.name
+            catalog_name=self.iceberg.catalog.name,
+            src_min_id=min_id,
+            src_max_id=max_id
         )
         session.add(job)
         session.flush()  # This will populate the job.id

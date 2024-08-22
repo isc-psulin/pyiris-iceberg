@@ -300,6 +300,8 @@ class IcebergJob(Base):
     action_name = Column(String(100))
     tablename = Column(String(100))
     catalog_name = Column(String(100))
+    src_min_id = Column(BigInteger)
+    src_max_id = Column(BigInteger)
 
 class IcebergJobStep(Base):
     __tablename__ = 'iceberg_job_steps'
