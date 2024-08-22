@@ -290,8 +290,6 @@ def downcast_timestamps(df):
             df[column] = df[column].astype('datetime64[us]')
         return df
 
-Base = declarative_base()
-
 class IceBergJobs(Base):
     __tablename__ = 'iceberg_jobs'
 
@@ -312,11 +310,11 @@ class LogEntry(Base):
     __tablename__ = "log_entries"
 
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    log_time = Column(DateTime, default=datetime.utcnow)
     level = Column(String(500))
     message = Column(String(500))
     module = Column(String(500))
-    function = Column(String(500))
+    function_name = Column(String(500))
     line = Column(Integer)
 
 from sqlalchemy.orm import sessionmaker
@@ -332,7 +330,7 @@ class SQLAlchemyLogHandler:
             level=record["level"].name,
             message=record["message"],
             module=record["module"],
-            function=record["function"],
+            function_name=record["function"],
             line=record["line"]
         )
         with self.Session() as session:
@@ -346,7 +344,7 @@ logger.add(sys.stderr, level="DEBUG")  # Add console handler
 def get_logger():
     return logger
 
-def initialize_logger(engine, min_db_level="INFO"):
+def initialize_logger(engine, min_db_level="DEBUG"):
     # Create the log_entries table
     Base.metadata.create_all(engine)
     
