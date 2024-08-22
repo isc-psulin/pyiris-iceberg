@@ -41,15 +41,13 @@ async def search_table(table_name: str, q: str = Query(None), limit: int = Query
     with Session() as session:
         if q:
             query = f"""
-            SELECT * FROM {table_name}
+            SELECT TOP :limit * FROM {table_name}
             WHERE {' OR '.join([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])}
-            LIMIT :limit
             """
             result = session.execute(text(query), {"search": f"%{q.lower()}%", "limit": limit})
         else:
             query = f"""
-            SELECT * FROM {table_name}
-            LIMIT :limit
+            SELECT TOP :limit * FROM {table_name}
             """
             result = session.execute(text(query), {"limit": limit})
         
