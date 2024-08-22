@@ -19,6 +19,7 @@
         <h2>{{ table.name }}</h2>
         <input type="text" id="{{ table.name }}-search" class="search-input" placeholder="Search {{ table.name }}...">
         <button id="{{ table.name }}-search-btn" class="search-button">Search</button>
+        <button id="{{ table.name }}-reset-btn" class="reset-button">Reset</button>
         <div id="{{ table.name }}-table"></div>
     {% endfor %}
 
@@ -66,6 +67,11 @@
                     if (event.key === "Enter") {
                         performSearch{{ table.name }}();
                     }
+                });
+
+                document.getElementById("{{ table.name }}-reset-btn").addEventListener("click", function() {
+                    document.getElementById("{{ table.name }}-search").value = "";
+                    performSearch{{ table.name }}();
                 });
 
                 // Initial load
