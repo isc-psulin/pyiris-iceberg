@@ -36,23 +36,30 @@ async def root(request: Request):
     return templates.TemplateResponse("index.html", {"request": request, "tables": tables})
 
 @app.get("/search/{table_name}")
-async def search_table(table_name: str, q: str = Query(None), limit: int = Query(500, ge=1, le=1000)):
+async def search_table(table_name: str, q: str = Query(None), job_id: int = Query(None), limit: int = Query(500, ge=1, le=1000)):
     if table_name not in Base.metadata.tables:
         return JSONResponse(content={"error": "Table not found"}, status_code=404)
 
     with Session() as session:
+        conditions = []
+        params = {"limit": limit}
+
         if q:
-            query = f"""
-            SELECT TOP :limit * FROM {table_name}
-            WHERE {' OR '.join([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])}
-            """
-            result = session.execute(text(query), {"search": f"%{q.lower()}%", "limit": limit})
-        else:
-            query = f"""
-            SELECT TOP :limit * FROM {table_name}
-            """
-            print(query)
-            result = session.execute(text(query), {"limit": limit})
+            conditions.extend([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])
+            params["search"] = f"%{q.lower()}%"
+
+        if job_id and table_name in ['iceberg_job_step', 'log_entries']:
+            conditions.append("job_id = :job_id")
+            params["job_id"] = job_id
+
+        where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+        query = f"""
+        SELECT TOP :limit * FROM {table_name}
+        WHERE {where_clause}
+        """
+        print(query)
+        result = session.execute(text(query), params)
         
         df = pd.DataFrame(result.fetchall(), columns=result.keys())
         print(len(df.index))
