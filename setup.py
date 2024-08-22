@@ -8,6 +8,6 @@ setup(name='irisiceberg',
       author='Patrick Sulin',
       author_email='psulin@intersystems.com',
       url='',
-      package_dir={'':'src'},
+      package_dir={'irisiceberg':'src', 'tests': 'tests'},
       packages=['irisiceberg', 'tests'],
      )
