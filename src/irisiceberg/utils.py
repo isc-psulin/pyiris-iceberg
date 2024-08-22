@@ -326,6 +326,7 @@ class LogEntry(Base):
     __tablename__ = "log_entries"
 
     id = Column(Integer, primary_key=True)
+    job_id = Column(Integer, ForeignKey('iceberg_job.id'), nullable=True)
     log_time = Column(DateTime, default=datetime.utcnow)
     level = Column(String(500))
     message = Column(String(500))
@@ -334,6 +335,9 @@ class LogEntry(Base):
     line = Column(Integer)
 
 from sqlalchemy.orm import sessionmaker
+from contextvars import ContextVar
+
+current_job_id = ContextVar('current_job_id', default=None)
 
 class SQLAlchemyLogHandler:
     def __init__(self, engine):
@@ -343,6 +347,7 @@ class SQLAlchemyLogHandler:
     def write(self, message):
         record = message.record
         log_entry = LogEntry(
+            job_id=current_job_id.get(),
             level=record["level"].name,
             message=record["message"],
             module=record["module"],

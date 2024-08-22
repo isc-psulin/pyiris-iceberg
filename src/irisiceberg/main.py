@@ -146,7 +146,10 @@ class IcebergIRIS:
             session.add(job)
             session.flush()  # This will populate the job.id
 
-         # TODO - This should be set by the config so it can use DB-API or odbc
+        # Set the current job ID for logging
+        utils.current_job_id.set(job.id)
+
+        # TODO - This should be set by the config so it can use DB-API or odbc
         connection, _ = self.iris.get_odbc_connection()
         for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
         
@@ -183,6 +186,9 @@ class IcebergIRIS:
         job.end_time = datetime.now()
         session.commit()
         session.close()
+
+        # Reset the current job ID
+        utils.current_job_id.set(None)
 
         get_logger().info(f"Completed updating and recording job summaries for {tablename}")
 
