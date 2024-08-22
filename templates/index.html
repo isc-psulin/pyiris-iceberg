@@ -6,6 +6,7 @@
     <title>Database Tables</title>
     <link href="https://unpkg.com/tabulator-tables@5.1.0/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js"></script>
+    <script type="module">import {SelectRowModule} from 'tabulator-tables';</script>  
     <style>
         .search-input {
             margin-bottom: 10px;
@@ -24,6 +25,7 @@
     {% endfor %}
 
     <script>
+        
         var selectedJobId = null;
 
         {% for table in tables %}
@@ -33,6 +35,7 @@
                     layout: "fitColumns",
                     pagination: "local",
                     paginationSize: 50,
+                    selectableRows: true,
                     columns: [
                         {% for column in table.columns %}
                             {title: "{{ column }}", field: "{{ column }}"},
@@ -44,7 +47,7 @@
                         selectedJobId = row.getData().id;
                         performSearchiceberg_job_step(selectedJobId);
                         performSearchlog_entries(selectedJobId);
-                        
+                        console.log("Selected {{ row }}")
                         // Trigger search for iceberg_job_step and log_entries tables
                         document.getElementById("iceberg_job_step-search-btn").click();
                         document.getElementById("log_entries-search-btn").click();
