@@ -39,15 +39,19 @@
 
             // Add search functionality
             document.getElementById("{{ table.name }}-search").addEventListener("input", function(e){
-                table.setFilter(function(data){
-                    var searchTerm = e.target.value.toLowerCase();
-                    for(var key in data){
-                        if(data[key] && data[key].toString().toLowerCase().indexOf(searchTerm) !== -1){
-                            return true;
+                var searchTerm = e.target.value.toLowerCase();
+                if (searchTerm.length > 3) {
+                    table.setFilter(function(data){
+                        for(var key in data){
+                            if(data[key] && data[key].toString().toLowerCase().indexOf(searchTerm) !== -1){
+                                return true;
+                            }
                         }
-                    }
-                    return false;
-                });
+                        return false;
+                    });
+                } else {
+                    table.clearFilter();
+                }
             });
         </script>
     {% endfor %}
