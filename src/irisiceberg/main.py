@@ -184,6 +184,8 @@ class IcebergIRIS:
 
         # Update the main job record with the end time
         job.end_time = datetime.now()
+        session = Session()
+        session.merge(job)
         session.commit()
         session.close()
 
