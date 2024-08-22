@@ -3,9 +3,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
-from irisiceberg.models import Base
-from irisiceberg.utils import get_alchemy_engine
-from irisiceberg.models import Configuration
+from irisiceberg.utils import get_alchemy_engine, Configuration, Base
 import pandas as pd
 import sys 
 
@@ -62,7 +60,8 @@ async def search_table(table_name: str, q: str = Query(None), limit: int = Query
         # Convert Timestamp columns to strings
         for col in df.select_dtypes(include=['datetime64']).columns:
             df[col] = df[col].astype(str)
-        
+        df = df.fillna(value="")
+        print(df.info())
         return JSONResponse(content=df.to_dict(orient="records"))
 
 if __name__ == "__main__":
