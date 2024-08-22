@@ -291,7 +291,7 @@ def downcast_timestamps(df):
         return df
 
 class IcebergJob(Base):
-    __tablename__ = 'iceberg_jobs'
+    __tablename__ = 'iceberg_job'
 
     id = Column(Integer, primary_key=True)
     start_time = Column(DateTime)
@@ -302,14 +302,17 @@ class IcebergJob(Base):
     catalog_name = Column(String(100))
     src_min_id = Column(BigInteger)
     src_max_id = Column(BigInteger)
-    min_id = Column(BigInteger)
-    max_id = Column(BigInteger)
+    src_row_count = Column(BigInteger)
+    src_timestamp = Column(DateTime)
+    job_status = Column(String(100))
+    error_message = Column(String(100))
+
 
 class IcebergJobStep(Base):
-    __tablename__ = 'iceberg_job_steps'
+    __tablename__ = 'iceberg_job_step'
 
     id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey('iceberg_jobs.id'))
+    job_id = Column(Integer)
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     src_min_id = Column(BigInteger)

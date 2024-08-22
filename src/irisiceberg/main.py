@@ -1,3 +1,5 @@
+import sys
+
 # Third party
 import pyiceberg.table
 import pyiceberg
@@ -88,10 +90,12 @@ class Iceberg():
         ''' 
         Load the table from iceberg using the catalog if it exists
         '''
-        table = self.catalog.load_table(tablename)
-        return table
-
-    
+        try:
+            table = self.catalog.load_table(tablename)
+            return table
+        except pyiceberg.exceptions.NoSuchTableError as ex:
+            get_logger().error(f"Cannot table table {tablename}:  {ex}")
+            return None
 
 class IcebergIRIS:
     def __init__(self, name: str = "", config: Configuration = None):
@@ -106,40 +110,44 @@ class IcebergIRIS:
         self.iris = IRIS(self.config)
         self.iceberg = Iceberg(self.config)
     
-    def update_iceberg_table(self, tablename: str, clause: str = ""):
+    def update_iceberg_table(self, tablename: str, clause: str = "", job: IcebergJob = None):
         
         iceberg_table = self.iceberg.load_table(tablename)
+        if iceberg_table is None:
+            get_logger().error(f"Cannot load table, exiting")
+            sys.exit(1)
+
+        # TODO - This should be set by the config so it can use DB-API or odbc
         partition_size = self.config.table_chunksize
         clause = self.config.sql_clause
 
-        # Ensure the IceBerg tables exist
-        create_iceberg_tables(self.iris.engine)
+        # Only Create a job if one does not already exist
+        if job is None:
+            # Create a session
+            Session = sessionmaker(bind=self.iris.engine)
+            session = Session()
 
-        # Create a session
-        Session = sessionmaker(bind=self.iris.engine)
-        session = Session()
+            # Get initial stats
+            row_count, min_id, max_id = self.iris.get_table_stats(tablename, clause)
+            
+            job_start_time = datetime.now()
 
-        # This is the DB-API library connection
+            # Create the main job record
+            job = IcebergJob(
+                start_time=job_start_time,
+                job_name=f"update_{tablename}",
+                action_name="append",
+                tablename=tablename,
+                catalog_name=self.iceberg.catalog.name,
+                src_row_count=row_count,
+                src_min_id=min_id,
+                src_max_id=max_id
+            )
+            session.add(job)
+            session.flush()  # This will populate the job.id
+
+         # TODO - This should be set by the config so it can use DB-API or odbc
         connection, _ = self.iris.get_odbc_connection()
-        
-        # Get initial stats
-        row_count, min_id, max_id = self.iris.get_table_stats(tablename, clause)
-        
-        job_start_time = datetime.now()
-
-        # Create the main job record
-        job = IcebergJob(
-            start_time=job_start_time,
-            job_name=f"update_{tablename}",
-            action_name="append",
-            tablename=tablename,
-            catalog_name=self.iceberg.catalog.name,
-            src_min_id=min_id,
-            src_max_id=max_id
-        )
-        session.add(job)
-        session.flush()  # This will populate the job.id
-
         for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
         
             step_start_time = datetime.now()
@@ -153,6 +161,10 @@ class IcebergIRIS:
             iceberg_table.append(arrow_data)
             
             get_logger().info(f"Appended to iceberg table")
+
+            # Create a session
+            Session = sessionmaker(bind=self.iris.engine)
+            session = Session()
 
             # Record job step
             step_end_time = datetime.now()
@@ -183,25 +195,27 @@ class IcebergIRIS:
         Session = sessionmaker(bind=self.iris.engine)
         session = Session()
 
-        job_start_time = datetime.now()
+        with session:
+            job_start_time = datetime.now()
 
-        # Create the main job record
-        job = IcebergJob(
-            start_time=job_start_time,
-            job_name=f"initial_sync_{tablename}",
-            action_name="initial_sync",
-            tablename=tablename,
-            catalog_name=self.iceberg.catalog.name
-        )
-        session.add(job)
-        session.flush()  # This will populate the job.id
-
+            # Create the main job record
+            job = IcebergJob(
+                start_time=job_start_time,
+                job_name=f"initial_sync_{tablename}",
+                action_name="initial_sync",
+                tablename=tablename,
+                catalog_name=self.iceberg.catalog.name
+            )
+            session.add(job)
+            session.flush()  # This will populate the job.id
+            session.refresh(job)
+         
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
         get_logger().info(f"Created table {tablename}")
 
         # Load data from IRIS table
-        self.update_iceberg_table(tablename=tablename, clause=clause)
+        self.update_iceberg_table(tablename=tablename, clause=clause, job=job)
 
         # Update the main job record with the end time
         job.end_time = datetime.now()
