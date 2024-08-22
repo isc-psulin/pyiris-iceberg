@@ -214,7 +214,8 @@ class IcebergIRIS:
             )
             session.add(job)
             session.flush()  # This will populate the job.id
-            session.refresh(job)
+            
+            #session.refresh(job)
          
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
