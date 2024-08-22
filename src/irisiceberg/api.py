@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Query
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
 from irisiceberg.utils import Base, get_alchemy_engine, Configuration
 import pandas as pd
@@ -16,7 +16,6 @@ import testing_configs
 
 config = getattr(testing_configs, 'iris_src_local_target')
 config = Configuration(**config)
-#config = Configuration(testing_configs.iris_src_local_target)  # You might need to adjust this based on how you load your configuration
 print(f"CONFIG - {config}")
 engine = get_alchemy_engine(config)
 Session = sessionmaker(bind=engine)
@@ -27,21 +26,33 @@ async def root(request: Request):
     inspector = inspect(engine)
     for table_name in inspector.get_table_names():
         if table_name in Base.metadata.tables:
-            with Session() as session:
-                query = session.query(Base.metadata.tables[table_name])
-                df = pd.read_sql(query.statement, session.bind)
-                
-                # Convert Timestamp columns to strings
-                for col in df.select_dtypes(include=['datetime64']).columns:
-                    df[col] = df[col].astype(str)
-                
-                tables.append({
-                    "name": table_name,
-                    "data": df.to_dict(orient="records"),
-                    "columns": df.columns.tolist()
-                })
+            tables.append({
+                "name": table_name,
+                "columns": [column['name'] for column in inspector.get_columns(table_name)]
+            })
 
     return templates.TemplateResponse("index.html", {"request": request, "tables": tables})
+
+@app.get("/search/{table_name}")
+async def search_table(table_name: str, q: str = Query(None), limit: int = Query(50, ge=1, le=1000)):
+    if table_name not in Base.metadata.tables:
+        return JSONResponse(content={"error": "Table not found"}, status_code=404)
+
+    with Session() as session:
+        query = f"""
+        SELECT * FROM {table_name}
+        WHERE {' OR '.join([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])}
+        LIMIT :limit
+        """
+        result = session.execute(text(query), {"search": f"%{q.lower()}%", "limit": limit})
+        
+        df = pd.DataFrame(result.fetchall(), columns=result.keys())
+        
+        # Convert Timestamp columns to strings
+        for col in df.select_dtypes(include=['datetime64']).columns:
+            df[col] = df[col].astype(str)
+        
+        return JSONResponse(content=df.to_dict(orient="records"))
 
 if __name__ == "__main__":
     import uvicorn
