@@ -20,9 +20,6 @@
         <input type="text" id="{{ table.name }}-search" class="search-input" placeholder="Search {{ table.name }}...">
         <button id="{{ table.name }}-search-btn" class="search-button">Search</button>
         <button id="{{ table.name }}-reset-btn" class="reset-button">Reset</button>
-        {% if table.name == 'iceberg_job' %}
-        <button id="{{ table.name }}-apply-filter-btn" class="apply-filter-button">Apply Filter</button>
-        {% endif %}
         <div id="{{ table.name }}-table"></div>
     {% endfor %}
 
@@ -45,6 +42,8 @@
                     selectable: 1,
                     rowClick: function(e, row) {
                         selectedJobId = row.getData().id;
+                        performSearchiceberg_job_step(selectedJobId);
+                        performSearchlog_entries(selectedJobId);
                     },
                     {% endif %}
                 });
@@ -92,16 +91,6 @@
                     performSearch{{ table.name }}();
                 });
 
-                {% if table.name == 'iceberg_job' %}
-                document.getElementById("{{ table.name }}-apply-filter-btn").addEventListener("click", function() {
-                    if (selectedJobId) {
-                        performSearchiceberg_job_step(selectedJobId);
-                        performSearchlog_entries(selectedJobId);
-                    } else {
-                        alert("Please select a job first.");
-                    }
-                });
-                {% endif %}
 
                 // Initial load
                 console.log("Performing initial load for {{ table.name }}");
