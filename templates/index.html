@@ -44,6 +44,10 @@
                         selectedJobId = row.getData().id;
                         performSearchiceberg_job_step(selectedJobId);
                         performSearchlog_entries(selectedJobId);
+                        
+                        // Trigger search for iceberg_job_step and log_entries tables
+                        document.getElementById("iceberg_job_step-search-btn").click();
+                        document.getElementById("log_entries-search-btn").click();
                     },
                     {% endif %}
                 });
