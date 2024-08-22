@@ -18,6 +18,7 @@
     {% for table in tables %}
         <h2>{{ table.name }}</h2>
         <input type="text" id="{{ table.name }}-search" class="search-input" placeholder="Search {{ table.name }}...">
+        <button id="{{ table.name }}-search-btn" class="search-button">Search</button>
         <div id="{{ table.name }}-table"></div>
         <script>
             var tableData = {{ table.data | tojson | safe }};
@@ -38,18 +39,21 @@
             });
 
             // Add search functionality
-            document.getElementById("{{ table.name }}-search").addEventListener("input", function(e){
-                var searchTerm = e.target.value.toLowerCase();
-                if (searchTerm.length > 3) {
-                    table.setFilter(function(row){
-                        for(var key in row.getData()){
-                            if(row.getData()[key] && row.getData()[key].toString().toLowerCase().indexOf(searchTerm) !== -1){
-                                return true;
-                            }
+            document.getElementById("{{ table.name }}-search-btn").addEventListener("click", function(){
+                var searchTerm = document.getElementById("{{ table.name }}-search").value.toLowerCase();
+                table.setFilter(function(row){
+                    for(var key in row.getData()){
+                        if(row.getData()[key] && row.getData()[key].toString().toLowerCase().indexOf(searchTerm) !== -1){
+                            return true;
                         }
-                        return false;
-                    });
-                } else {
+                    }
+                    return false;
+                });
+            });
+
+            // Clear filter when search input is empty
+            document.getElementById("{{ table.name }}-search").addEventListener("input", function(e){
+                if (e.target.value === "") {
                     table.clearFilter();
                 }
             });
