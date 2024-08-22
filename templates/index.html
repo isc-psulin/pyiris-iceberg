@@ -17,6 +17,7 @@
             var tableHeight = Math.min(600, tableData.length * rowHeight + 50); // 50px buffer for header
             var table = new Tabulator("#{{ table.name }}-table", {
                 height: tableHeight,
+                width: "80%",
                 data: tableData,
                 columns: [
                     {% for column in table.columns %}
