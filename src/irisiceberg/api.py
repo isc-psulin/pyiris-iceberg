@@ -3,7 +3,9 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
-from irisiceberg.utils import Base, get_alchemy_engine, Configuration
+from irisiceberg.models import Base
+from irisiceberg.utils import get_alchemy_engine
+from irisiceberg.models import Configuration
 import pandas as pd
 import sys 
 
