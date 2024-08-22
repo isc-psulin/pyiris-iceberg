@@ -10,6 +10,10 @@ setup(name='irisiceberg',
       url='',
       package_dir={'irisiceberg':'src', 'tests': 'tests'},
       packages=['irisiceberg', 'tests'],
+      package_data={
+        "irisiceberg": ["bin/*.whl"],
+    },
+    include_package_data=True,
       install_requires= ['adlfs==2024.7.0',
 'aider==0.2.6',
 'aider-chat==0.49.1',
@@ -199,4 +203,4 @@ setup(name='irisiceberg',
 'widgetsnbextension==4.0.11',
 'yarl==1.9.4',
 'zipp==3.19.2']
-     )
+)
