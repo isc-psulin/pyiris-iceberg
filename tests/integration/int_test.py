@@ -43,7 +43,7 @@ def initial_table_sync(tablename, config_name: str):
     # Show some of the data from the new table
     ice_table = ice.iceberg.load_table(tablename)
     data = ice_table.scan(limit=100).to_pandas()
-    print(ice_table.properties)
+    
     print(data)
 
 def update_table(tablename, config_name: str, clause: str = ""):
