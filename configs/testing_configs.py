@@ -52,6 +52,13 @@ base = {
         },
         {
             "name": "Azure",
+            "uri": "iris://azureuser:iris-iceberg@48.217.241.83:1972/DevStats",
+            "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
+            "adlfs.account-name": "testiris",
+            "location": "abfs://iceberg",
+        },
+            {
+            "name": "PatAzure",
             "uri": "iris://_SYSTEM:sys@localhost:1972/USER",
             "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
             "adlfs.account-name": "testiris",
