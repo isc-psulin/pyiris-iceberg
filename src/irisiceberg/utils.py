@@ -176,7 +176,8 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
            # required=not column.nullable
         ))
 
-    return Schema(*iceberg_fields)
+    schema = Schema(*iceberg_fields)
+    return schema
 
 def load_data_type_map(tablename, engine):
     

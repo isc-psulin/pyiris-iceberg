@@ -41,6 +41,8 @@ def update_table(tablename, config_name: str, clause: str = ""):
     ice = create_IRISIceberg(config)
     ice.update_iceberg_table(config.table_name, config.sql_clause)
 
+def test():
+    print("heelo")
 # if __name__ == "__main__":
 
 #     import pytest

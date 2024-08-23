@@ -269,7 +269,8 @@ class IcebergIRIS:
             self.iris.load_metadata()
 
         schema = self.create_table_schema(tablename)   
-        
+        get_logger().info(f"Iceberg schema {schema}")
+
         # Create the namespace
         #tablename_only = tablename.split(".")[-1]
         namespace = ".".join(tablename.split(".")[:-1])
