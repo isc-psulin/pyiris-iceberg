@@ -40,7 +40,7 @@ base = {
         {
             "name": "Azure",
             "uri": "iris://_SYSTEM:sys@localhost:1972/USER",
-            "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
+            "adlfs.connection-string": os.environ.get("ADLFS.CONNECTION_STRING"),
             "adlfs.account-name": "testiris",
             "location": "abfs://mgb"
         }

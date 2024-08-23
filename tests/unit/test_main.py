@@ -2,9 +2,10 @@ import os
 import sys
 from irisiceberg.main import IcebergIRIS
 import irisiceberg.utils as utils
+import tests.fixtures.testing_configs as testing_configs
 
-sys.path.append("./fixtures")
-import testing_configs
+# sys.path.append("./fixtures")
+# import testing_configs
 from pprint import pprint 
 
 def test_create_IRISIceberg():

@@ -8,9 +8,12 @@ setup(name='irisiceberg',
       author='Patrick Sulin',
       author_email='psulin@intersystems.com',
       url='',
-      package_dir={'irisiceberg':'src', 'tests': 'tests'},
-     # packages=['irisiceberg', 'tests'],
-      packages=find_packages(where="src"),
-      include_package_data=True,
-      install_requires= []
+      package_dir={'':'src', 'tests': 'tests'},
+      packages=(find_packages(where="src")+['tests', 'tests.unit', 'tests.integration', 'tests.fixtures']),
+      install_requires= ['pytest', 'sqlalchemy-iris' ,'pyarrow', 'pandas',
+                        'loguru',
+                        'pyiceberg',
+                        'pydantic',
+                        'pydantic_settings',
+                        'sqlalchemy']
 )
