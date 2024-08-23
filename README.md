@@ -77,3 +77,6 @@ Below is a list of the Operational Feature, which are classified as either Data 
     2. Foreign tables
        1. https://openexchange.intersystems.com/package/IRIS-External-Table-Driver
    
+
+## Notes
+  - sqlalchemy-iris==0.12.0 is required, later versions convert timestamps to strings   
