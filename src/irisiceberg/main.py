@@ -202,7 +202,7 @@ class IcebergIRIS:
     def initial_table_sync(self, tablename: str, clause: str = ""):
         
         # Ensure the IceBerg tables exist
-        create_iceberg_tables(self.iris.engine)
+        # create_iceberg_tables(self.iris.engine)
 
         # Create a session
         Session = sessionmaker(bind=self.iris.engine)
