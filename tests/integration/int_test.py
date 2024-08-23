@@ -34,7 +34,6 @@ def purge_table(tablename: str, config_name: str):
         logger.error(f"Cannot purge table {tablename}:  {ex}")
         #logger.error(f"Cannot purge table {tablename} because it does not exist")
     
-
 def initial_table_sync(tablename, config_name: str):
 
     config = get_config(config_name)

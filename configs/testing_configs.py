@@ -5,7 +5,7 @@ load_dotenv()
 
 base = {
     "table_chunksize": 50000,
-    "sql_clause": "",
+    "sql_clause": "ID < 5000",
     "table_name": "FS.AccountPosition2",
     "partition_field": "ID",
     "servers": [

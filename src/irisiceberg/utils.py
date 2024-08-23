@@ -11,6 +11,7 @@ import iris
 from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
+from pyiceberg.catalog.sql import IcebergNamespaceProperties, IcebergTables, SqlCatalogBaseTable
 from pyiceberg.types import NestedField
 import pytest
 import pandas as pd
@@ -307,7 +308,6 @@ class IcebergJob(Base):
     job_status = Column(String(100))
     error_message = Column(String(100))
 
-
 class IcebergJobStep(Base):
     __tablename__ = 'iceberg_job_step'
 
@@ -319,8 +319,14 @@ class IcebergJobStep(Base):
     src_max_id = Column(BigInteger)
     src_timestamp = Column(DateTime)
 
-def create_iceberg_tables(engine):
-    Base.metadata.create_all(engine)
+def create_iceberg_catalog_tables(target_iceberg):
+
+    engine = create_engine(target_iceberg.uri)
+    try:
+        get_logger().info("Creating iceberg catalog tables")
+        SqlCatalogBaseTable.metadata.create_all(engine)
+    except Exception:
+        get_logger().error("Error Creating iceberg catalog tables")
 
 class LogEntry(Base):
     __tablename__ = "log_entries"

@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 # Local package
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
-from irisiceberg.utils import create_iceberg_tables, initialize_logger, get_logger, logger
+from irisiceberg.utils import create_iceberg_catalog_tables, initialize_logger, get_logger, logger
 from irisiceberg.utils import Configuration, IRIS_Config, IcebergJob, IcebergJobStep
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
@@ -88,10 +88,10 @@ class Iceberg():
         self.config = config
         #self.iris = iris
 
-        target_iceberg =  get_from_list(self.config.icebergs, self.config.target_iceberg) # -> Iceberg_Config
+        self.target_iceberg =  get_from_list(self.config.icebergs, self.config.target_iceberg) 
 
         # The configuration has to match the expected fields for it's particular type
-        self.catalog = SqlCatalog(**dict(target_iceberg))
+        self.catalog = SqlCatalog(**dict(self.target_iceberg))
     
     def load_table(self, tablename: str) -> pyiceberg.table.Table:
         ''' 
@@ -126,7 +126,6 @@ class IcebergIRIS:
 
         # TODO - This should be set by the config so it can use DB-API or odbc
         partition_size = self.config.table_chunksize
-        clause = self.config.sql_clause
 
         # Only Create a job if one does not already exist
         if job is None:
@@ -157,7 +156,8 @@ class IcebergIRIS:
         utils.current_job_id.set(job.id)
 
         # TODO - This should be set by the config so it can use DB-API or odbc
-        if self.config.connection_type == "odbc":
+        server = self.iris.get_server()
+        if server.connection_type == "odbc":
             connection, _ = self.iris.get_odbc_connection()
         else:
             connection = self.iris.engine.connect()
@@ -201,8 +201,11 @@ class IcebergIRIS:
 
     def initial_table_sync(self, tablename: str, clause: str = ""):
         
-        # Ensure the IceBerg tables exist
-        # create_iceberg_tables(self.iris.engine)
+        # Create iceberg catalog tables if they do not exist
+        create_iceberg_catalog_tables(self.iceberg.target_iceberg)
+
+        # Ensure the Iceberg tables exist
+        self.create_iceberg_table(tablename)
 
         # Create a session
         Session = sessionmaker(bind=self.iris.engine)
@@ -228,6 +231,10 @@ class IcebergIRIS:
         get_logger().info(f"Created table {tablename}")
 
         # Load data from IRIS table
+        print(self.config)
+        clause = self.config.sql_clause
+        get_logger().info(f"Clause - {clause}")
+
         self.update_iceberg_table(tablename=tablename, clause=clause, job=job, session=session)
 
         # Update the main job record with the end time
