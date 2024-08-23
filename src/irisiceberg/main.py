@@ -32,6 +32,12 @@ class IRIS:
         self.engine = get_alchemy_engine(self.config)
         initialize_logger(self.engine)
         self.logger = logger
+        self.logger.debug(f"Created Engine: {self.engine.url}")
+
+    def get_engine(self):
+        if not self.engine:
+            self.create_engine()
+        return self.engine
     
     def get_odbc_connection(self):
         server = utils.get_from_list(self.config.servers, self.config.src_server)
@@ -151,7 +157,10 @@ class IcebergIRIS:
         utils.current_job_id.set(job.id)
 
         # TODO - This should be set by the config so it can use DB-API or odbc
-        connection, _ = self.iris.get_odbc_connection()
+        if self.config.connection_type == "odbc":
+            connection, _ = self.iris.get_odbc_connection()
+        else:
+            connection = self.iris.engine.connect()
         
         for iris_data in read_sql_to_df(connection, tablename, clause=clause, chunksize=partition_size, metadata=self.iris.metadata):
         

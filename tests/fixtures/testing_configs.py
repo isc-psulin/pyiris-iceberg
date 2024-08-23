@@ -12,7 +12,7 @@ base = {
         {
             "name": "LocalTesting",
             "dialect": "sqlite",
-            "database": "/tmp/iceberg/test.db",
+            "database": ":memory:",
             "warehouse": "/tmp/iceberg",
             "connection_type": "sqlite",
             "schemas": [],
