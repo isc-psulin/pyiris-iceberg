@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-
-from distutils.core import setup
+#from setuptools import find_packages, setup
+from distutils.core import setup, find_packages
 
 setup(name='irisiceberg',
       version='1.0',
@@ -9,7 +9,8 @@ setup(name='irisiceberg',
       author_email='psulin@intersystems.com',
       url='',
       package_dir={'irisiceberg':'src', 'tests': 'tests'},
-      packages=['irisiceberg', 'tests'],
+     # packages=['irisiceberg', 'tests'],
+      packages=find_packages() + ['tests'],
       include_package_data=True,
       install_requires= []
 )
