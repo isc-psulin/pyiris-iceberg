@@ -223,7 +223,6 @@ class IcebergIRIS:
         )
         session.add(job)
         session.flush()  # This will populate the job.id
-        print(f"Job - {job} {job.id}")
         #session.refresh(job)
          
         # Create table, deleting if it exists
@@ -231,7 +230,6 @@ class IcebergIRIS:
         get_logger().info(f"Created table {tablename}")
 
         # Load data from IRIS table
-        print(self.config)
         clause = self.config.sql_clause
         get_logger().info(f"Clause - {clause}")
 
@@ -269,6 +267,7 @@ class IcebergIRIS:
             self.iris.load_metadata()
 
         schema = self.create_table_schema(tablename)   
+        print(f"Iceberg schema {schema}")
         get_logger().info(f"Iceberg schema {schema}")
 
         # Create the namespace
