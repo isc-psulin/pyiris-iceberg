@@ -10,7 +10,7 @@ setup(name='irisiceberg',
       url='',
       package_dir={'irisiceberg':'src', 'tests': 'tests'},
      # packages=['irisiceberg', 'tests'],
-      packages=find_packages(where="src") + find_packages(where="tests") ,
+      packages=find_packages(where="src"),
       include_package_data=True,
       install_requires= []
 )
