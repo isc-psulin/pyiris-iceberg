@@ -1,9 +1,9 @@
 import sys
 import traceback
 from loguru import logger
-
+from collections import defaultdict
 from irisiceberg.main import IcebergIRIS
-from irisiceberg.utils import Configuration
+from irisiceberg.utils import Configuration, logger
 import pyiceberg
 
 sys.path.append("./configs")
@@ -45,6 +45,35 @@ def initial_table_sync(tablename, config_name: str):
     data = ice_table.scan(limit=100).to_pandas()
     
     print(data)
+
+def show_table_data_schema(tablename, config_name: str):
+
+    config = get_config(config_name)
+    ice = create_IRISIceberg(config)
+
+    # Show some of the data from the new table
+    ice_table = ice.iceberg.load_table(tablename)
+    
+    data = ice_table.scan(limit=100).to_pandas()
+    
+    logger.info(ice_table.schema)
+    logger.info(data)
+
+def list_tables(tablename, config_name: str):
+
+    config = get_config(config_name)
+    ice = create_IRISIceberg(config)
+
+    namespaces = ice.iceberg.catalog.list_namespaces()
+
+    tables = defaultdict(list)
+    for ns in namespaces:
+        tables[ns] = ice.iceberg.catalog.list_tables(ns) 
+    
+    for ns, tablename in tables.items():
+        logger.info(f"{tablename}")
+        #logger.info(f"{'.'.join(tablename)}")
+
 
 def update_table(tablename, config_name: str, clause: str = ""):
     config = get_config(config_name)

@@ -1,5 +1,7 @@
 import math 
+import time
 import sys
+
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic_settings import BaseSettings
@@ -94,13 +96,13 @@ def get_alchemy_engine(config: Configuration):
  
     return engine
 
-def create_connection_url(server: IRIS_Config):
+def create_connection_url(server: IRIS_Config, connection_type: str = "db-api"):
      
      # Create a connection url from the server properties in this form dialect+driver://username:password@host:port/database
      # Only adding sections if they have a value in the server instance
-     
-     # sqlite requires 3 slashes for reference to file db
-     if server.connection_type in ['sqlite', 'db-api']:
+    
+     # sqlite requires 3 slashes for reference to file db.
+     if connection_type in ['sqlite', 'db-api']:
          url = get_generic_connection_url(server)
          return url
      
@@ -206,12 +208,26 @@ def read_sql_to_df(connection, table_name, clause: str = '', chunksize: int = 50
     query = f"SELECT * FROM {table_name} {where}"
     logger.debug(f"Query: {query}")
     
-    for df in pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize):
-        for col in columns:
-            if str(col.type).upper().startswith(('DATE', 'TIMESTAMP')):
-                df[col.name] = pd.to_datetime(df[col.name])
+    df_iter = pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize)
+    not_empty = True
+    while not_empty:
+        start_time = time.time()
+        try:
+            df = next(df_iter)
+            load_time = time.time() - start_time
+            logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds at {df.shape[0]/load_time} per sec")
+            yield df
+        except StopIteration as stop:
+            break
+
+    # for df, time.time() in pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize):
+    #     load_time = time.time() -start_time
+    #     logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds")
+    #     for col in columns:
+    #         if str(col.type).upper().startswith(('DATE', 'TIMESTAMP')):
+    #             df[col.name] = pd.to_datetime(df[col.name])
         
-        yield df
+    #     yield df
 
 def split_sql(tablename, min_id, max_id, partition_size, row_count, clause):
         """ Generate SQL SELECT statements of equal partitions of records function
@@ -324,10 +340,10 @@ def create_iceberg_catalog_tables(target_iceberg):
 
     engine = create_engine(target_iceberg.uri)
     try:
-        get_logger().info("Creating iceberg catalog tables")
+        logger.info("Creating iceberg catalog tables")
         SqlCatalogBaseTable.metadata.create_all(engine)
     except Exception:
-        get_logger().error("Error Creating iceberg catalog tables")
+        logger.error("Error Creating iceberg catalog tables")
 
 class LogEntry(Base):
     __tablename__ = "log_entries"
@@ -369,8 +385,6 @@ class SQLAlchemyLogHandler:
 logger.remove()  # Remove default handler
 logger.add(sys.stderr, level="DEBUG")  # Add console handler
 
-def get_logger():
-    return logger
 
 def initialize_logger(engine, min_db_level="DEBUG"):
     # Create the log_entries table

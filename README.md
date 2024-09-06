@@ -68,7 +68,9 @@ Below is a list of the Operational Feature, which are classified as either Data 
     2. Write semantics of any specific engine are not a 1-1 mapping to Iceberg spec. A good understanding of Iceberg is necessary, but even then exact mapping of an engine's API the the write semantics of Iceberg is not clear.
     3. Tech details
        1. Using ODBC via pyodbc to load into pandas is 50-60 times faster than using the ISC DB-API
-       2. 
+    4. The pyiceberg library has some "interesting" implementation details.
+       1. SQLCatalog is created if it does not exist with no option to not do this or functions to create these tables during a normal Devops cycle.
+       2. The Catalog is entangled in odd ways with the target iceberg tables. The catalog requires both the location of the catalog and the location of the iceberg tables. This would make sense if the location of the iceberg tables was used like a default, but when creating the table one must specify the location of the catalog.
 
 
 ## Next explorations
@@ -80,3 +82,11 @@ Below is a list of the Operational Feature, which are classified as either Data 
 
 ## Notes
   - sqlalchemy-iris==0.12.0 is required, later versions convert timestamps to strings   
+
+## Conversation with AWS about Iceberg
+
+
+### My Questions
+1. What are the most important factors for performance? 
+2. Manufacturing Execution system - 
+   1. How much data? 1tb then bigger after processing into 200 tables

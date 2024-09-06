@@ -1,4 +1,5 @@
 import sys
+import time 
 
 # Third party
 import pyiceberg.table
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 # Local package
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, split_sql
-from irisiceberg.utils import create_iceberg_catalog_tables, initialize_logger, get_logger, logger
+from irisiceberg.utils import create_iceberg_catalog_tables, initialize_logger, logger
 from irisiceberg.utils import Configuration, IRIS_Config, IcebergJob, IcebergJobStep
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
@@ -70,7 +71,7 @@ class IRIS:
         if schemas:
             for schema in schemas:
                 self.metadata.reflect(self.engine, schema)
-                get_logger().debug(f"Getting Metadata for {schema} - {len(self.metadata.tables)} tables in metadata")
+                logger.debug(f"Getting Metadata for {schema} - {len(self.metadata.tables)} tables in metadata")
         else:
             # If the schemas list is empty, load from default schema
             self.metadata.reflect(self.engine)
@@ -101,7 +102,7 @@ class Iceberg():
             table = self.catalog.load_table(tablename)
             return table
         except pyiceberg.exceptions.NoSuchTableError as ex:
-            get_logger().error(f"Cannot table table {tablename}:  {ex}")
+            logger.error(f"Cannot table table {tablename}:  {ex}")
             return None
 
 class IcebergIRIS:
@@ -121,7 +122,7 @@ class IcebergIRIS:
         
         iceberg_table = self.iceberg.load_table(tablename)
         if iceberg_table is None:
-            get_logger().error(f"Cannot load table, exiting")
+            logger.error(f"Cannot load table, exiting")
             sys.exit(1)
 
         # TODO - This should be set by the config so it can use DB-API or odbc
@@ -169,13 +170,13 @@ class IcebergIRIS:
             # Downcast timestamps in the DataFrame
             iris_data = utils.downcast_timestamps(iris_data)
             arrow_data = pa.Table.from_pandas(iris_data)
-            get_logger().info(f"Loaded  {arrow_data.num_rows}  from {tablename}")
-
-            # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
-            iceberg_table.append(arrow_data)
             
-            get_logger().info(f"Appended to iceberg table")
-
+            # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
+            start_time = time.time()
+            iceberg_table.append(arrow_data)
+            load_time = time.time() - start_time
+            logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time} per sec")
+            
             # Record job step
             step_end_time = datetime.now()
             job_step = IcebergJobStep(
@@ -197,10 +198,15 @@ class IcebergIRIS:
         # Reset the current job ID
         utils.current_job_id.set(None)
 
-        get_logger().info(f"Completed updating and recording job summaries for {tablename}")
+        logger.info(f"Completed updating and recording job summaries for {tablename}")
 
     def initial_table_sync(self, tablename: str, clause: str = ""):
-        
+        """ This function creates all the required tables and does an initial load of data.
+        This is a good method for quickly testing the code without needing to setup a catalog or create the iceberg tables.
+        This should not be used in production and will drop any existing tables and delete all data in that table.
+        Outside of testing, update_iceberg_table should be used for moving data and the required tables should be created
+        as a separate Devops process.
+        """
         # Create iceberg catalog tables if they do not exist
         create_iceberg_catalog_tables(self.iceberg.target_iceberg)
 
@@ -227,11 +233,11 @@ class IcebergIRIS:
          
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(tablename)
-        get_logger().info(f"Created table {tablename}")
+        logger.info(f"Created table {tablename}")
 
         # Load data from IRIS table
         clause = self.config.sql_clause
-        get_logger().info(f"Clause - {clause}")
+        logger.info(f"Clause - {clause}")
 
         self.update_iceberg_table(tablename=tablename, clause=clause, job=job, session=session)
 
@@ -247,7 +253,7 @@ class IcebergIRIS:
         try:
             self.catalog.purge_table(tablename)
         except pyiceberg.exceptions.NoSuchTableError as ex:
-            get_logger().error(f"Cannot purge table {tablename}:  {ex}")
+            logger.error(f"Cannot purge table {tablename}:  {ex}")
 
     def create_iceberg_table(self, tablename: str):
         '''
@@ -268,7 +274,7 @@ class IcebergIRIS:
 
         schema = self.create_table_schema(tablename)   
         print(f"Iceberg schema {schema}")
-        get_logger().info(f"Iceberg schema {schema}")
+        logger.info(f"Iceberg schema {schema}")
 
         # Create the namespace
         #tablename_only = tablename.split(".")[-1]

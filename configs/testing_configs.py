@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 base = {
-    "table_chunksize": 50000,
+    "table_chunksize": 100000,
     "sql_clause": "",
     "table_name": "FS.AccountPosition2",
     "partition_field": "ID",
@@ -26,9 +26,9 @@ base = {
             "host": "localhost",
             "password": "sys",
             "user": "_system",
-            "port": 1972,
-            "schemas": ["FS"],
-            "connection_type": "db-api",
+            "port": 5551,
+            "schemas": ["DevStats"],
+            "connection_type": "odbc",
         },
         {
             "name": "AzureIRIS",
@@ -59,7 +59,7 @@ base = {
         },
             {
             "name": "PatAzure",
-            "uri": "iris://_SYSTEM:sys@localhost:1972/USER",
+            "uri": "iris://_SYSTEM:sys@localhost:5551/USER",
             "adlfs.connection-string": os.environ["ADLFS.CONNECTION_STRING"],
             "adlfs.account-name": "testiris",
             "location": "abfs://mgb",
@@ -67,6 +67,7 @@ base = {
     ],
 }
 
+# No local data yet 
 local_testing = {
     "src_server": "LocalTesting",
     "admin_server": "LocalTesting",
@@ -95,8 +96,16 @@ azure_src_local_target = {
     "target_iceberg": "LocalTesting",
 }
 
+local_iris_src_azurepat_target = {
+    "src_server": "LocalIRIS",
+    "admin_server": "LocalIRIS",
+    "catalog_server": "LocalIRIS",
+    "target_iceberg": "PatAzure",
+}
+
 
 local_testing.update(base)
 iris_src_local_target.update(base)
 iris_src_azure_target.update(base)
 azure_src_local_target.update(base)
+local_iris_src_azurepat_target.update(base)
