@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from irisiceberg.utils import get_alchemy_engine, Configuration, Base
 from irisiceberg.app import load_config
 import pandas as pd
+from pydantic import BaseModel
 
 
 app = FastAPI()
@@ -26,6 +27,10 @@ engine = get_alchemy_engine(config)
 Session = sessionmaker(bind=engine)
 
 exclude_tables = []
+
+class QueryRequest(BaseModel):
+    query: str
+
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     tables = []
