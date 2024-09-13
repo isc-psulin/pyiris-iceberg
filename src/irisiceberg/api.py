@@ -76,6 +76,29 @@ async def search_table(table_name: str, q: str = Query(None), job_id: int = Quer
         print(df.info())
         return JSONResponse(content=df.to_dict(orient="records"))
 
+@app.get("/dataview", response_class=HTMLResponse)
+async def dataview(request: Request):
+    return templates.TemplateResponse("dataview.html", {"request": request})
+
+@app.post("/execute_query")
+async def execute_query(query_request: QueryRequest):
+    try:
+        with Session() as session:
+            result = session.execute(text(query_request.query))
+            df = pd.DataFrame(result.fetchall(), columns=result.keys())
+            
+            # Convert Timestamp columns to strings
+            for col in df.select_dtypes(include=['datetime64']).columns:
+                df[col] = df[col].astype(str)
+            df = df.fillna(value="")
+            
+            return JSONResponse(content={
+                "columns": df.columns.tolist(),
+                "data": df.to_dict(orient="records")
+            })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
