@@ -28,6 +28,7 @@ engine = get_alchemy_engine(config)
 Session = sessionmaker(bind=engine)
 
 exclude_tables = []
+grid_type = "tabulator"  # Default to tabulator, can be changed to "perspective"
 
 class QueryRequest(BaseModel):
     query: str
@@ -51,7 +52,7 @@ async def root(request: Request):
                     "columns": [column['name'] for column in inspector.get_columns(table_name)]
                 })
 
-    return templates.TemplateResponse("index.html", {"request": request, "tables": tables})
+    return templates.TemplateResponse("index.html", {"request": request, "tables": tables, "grid_type": grid_type})
 
 @app.get("/search/{table_name}")
 async def search_table(table_name: str, q: str = Query(None), job_id: int = Query(None), limit: int = Query(500, ge=1, le=1000)):
@@ -91,7 +92,7 @@ async def search_table(table_name: str, q: str = Query(None), job_id: int = Quer
 
 @app.get("/dataview", response_class=HTMLResponse)
 async def dataview(request: Request):
-    return templates.TemplateResponse("dataview.html", {"request": request})
+    return templates.TemplateResponse("dataview.html", {"request": request, "grid_type": grid_type})
 
 @app.post("/execute_query")
 async def execute_query(query_request: QueryRequest):

@@ -6,6 +6,13 @@
     <title>Dataview</title>
     <link href="https://unpkg.com/tabulator-tables@5.1.0/dist/css/tabulator.min.css" rel="stylesheet">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js"></script>
+    {% if grid_type == "perspective" %}
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective/dist/umd/perspective.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer/dist/umd/perspective-viewer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer-datagrid/dist/umd/perspective-viewer-datagrid.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer-d3fc/dist/umd/perspective-viewer-d3fc.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer/dist/css/themes.css" />
+    {% endif %}
     <style>
         .header-bar {
             background-color: #f8f9fa;
@@ -22,6 +29,12 @@
             height: 150px;
             margin-bottom: 10px;
         }
+        {% if grid_type == "perspective" %}
+        perspective-viewer {
+            height: 400px;
+            width: 100%;
+        }
+        {% endif %}
     </style>
 </head>
 <body>
@@ -41,12 +54,20 @@
     <div id="result-table"></div>
 
     <script>
+        {% if grid_type == "tabulator" %}
         var resultTable = new Tabulator("#result-table", {
             height: 400,
             layout: "fitColumns",
             pagination: "local",
             paginationSize: 1000,
         });
+        {% elif grid_type == "perspective" %}
+        var resultTable = document.getElementById("result-table");
+        var worker = perspective.worker();
+        var table = worker.table([]);
+        var viewer = document.createElement("perspective-viewer");
+        resultTable.appendChild(viewer);
+        {% endif %}
 
         function executeQuery(endpoint, queryData) {
             fetch(endpoint, {
@@ -66,8 +87,13 @@
                 if (data.error) {
                     alert(data.error);
                 } else {
+                    {% if grid_type == "tabulator" %}
                     resultTable.setColumns(data.columns.map(col => ({title: col, field: col})));
                     resultTable.setData(data.data);
+                    {% elif grid_type == "perspective" %}
+                    table.update(data.data);
+                    viewer.load(table);
+                    {% endif %}
                 }
             })
             .catch(error => {
