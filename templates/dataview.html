@@ -56,7 +56,12 @@
                 },
                 body: JSON.stringify(queryData),
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.error) {
                     alert(data.error);
@@ -67,7 +72,7 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while executing the query.');
+                alert('An error occurred while executing the query: ' + error.message);
             });
         }
 
