@@ -1,3 +1,5 @@
+import sys 
+
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -5,19 +7,20 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
 from irisiceberg.utils import get_alchemy_engine, Configuration, Base
+from irisiceberg.app import load_config
 import pandas as pd
-import sys 
+
 
 app = FastAPI()
 templates = Jinja2Templates(directory="/Users/psulin/projects/irisiceberg/templates")
 
 
 # Load configuration
-sys.path.append("/Users/psulin/projects/irisiceberg/configs")
-import testing_configs
+# sys.path.append("/Users/psulin/projects/irisiceberg/configs")
+# import testing_configs
 
-config = getattr(testing_configs, 'iris_src_local_target')
-config = Configuration(**config)
+# config = getattr(testing_configs, 'iris_src_local_target')
+config = load_config()
 print(f"CONFIG - {config}")
 engine = get_alchemy_engine(config)
 Session = sessionmaker(bind=engine)
