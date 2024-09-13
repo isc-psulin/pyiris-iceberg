@@ -99,27 +99,21 @@
                     alert(data.error);
                 } else {
                     {% if grid_type == "tabulator" %}
-                    if (isIceberg) {
-                        icebergResultTable.setColumns(data.columns.map(col => ({title: col, field: col})));
-                        icebergResultTable.setData(data.data);
-                    } else {
-                        sqlResultTable.setColumns(data.columns.map(col => ({title: col, field: col})));
-                        sqlResultTable.setData(data.data);
-                    }
+                    const targetTable = isIceberg ? icebergResultTable : sqlResultTable;
+                    targetTable.setColumns(data.columns.map(col => ({title: col, field: col})));
+                    targetTable.setData(data.data);
                     {% elif grid_type == "perspective" %}
-                    if (isIceberg) {
-                        if (icebergTable) {
-                            icebergTable.replace(data.data);
-                        } else {
-                            icebergTable = await worker.table(data.data);
-                            await icebergViewer.load(icebergTable);
-                        }
+                    const targetViewer = isIceberg ? icebergViewer : sqlViewer;
+                    let targetTable = isIceberg ? icebergTable : sqlTable;
+                    if (targetTable) {
+                        targetTable.replace(data.data);
                     } else {
-                        if (sqlTable) {
-                            sqlTable.replace(data.data);
+                        targetTable = await worker.table(data.data);
+                        await targetViewer.load(targetTable);
+                        if (isIceberg) {
+                            icebergTable = targetTable;
                         } else {
-                            sqlTable = await worker.table(data.data);
-                            await sqlViewer.load(sqlTable);
+                            sqlTable = targetTable;
                         }
                     }
                     {% endif %}
