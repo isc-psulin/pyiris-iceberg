@@ -10,6 +10,7 @@ from irisiceberg.utils import get_alchemy_engine, Configuration, Base
 from irisiceberg.app import load_config
 import pandas as pd
 from pydantic import BaseModel
+from pyiceberg.catalog import load_catalog
 
 
 app = FastAPI()
@@ -30,6 +31,15 @@ exclude_tables = []
 
 class QueryRequest(BaseModel):
     query: str
+
+class IcebergQueryRequest(BaseModel):
+    table_name: str
+
+# Load Iceberg catalog
+iceberg_catalog = load_catalog(
+    config.target_iceberg.catalog,
+    **config.target_iceberg.properties
+)
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -101,6 +111,24 @@ async def execute_query(query_request: QueryRequest):
                 "columns": df.columns.tolist(),
                 "data": df.to_dict(orient="records")
             })
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=400)
+
+@app.post("/execute_iceberg_query")
+async def execute_iceberg_query(query_request: IcebergQueryRequest):
+    try:
+        table = iceberg_catalog.load_table(query_request.table_name)
+        df = table.scan().to_pandas()
+        
+        # Convert Timestamp columns to strings
+        for col in df.select_dtypes(include=['datetime64']).columns:
+            df[col] = df[col].astype(str)
+        df = df.fillna(value="")
+        
+        return JSONResponse(content={
+            "columns": df.columns.tolist(),
+            "data": df.to_dict(orient="records")
+        })
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
