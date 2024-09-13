@@ -45,7 +45,7 @@
             height: 400,
             layout: "fitColumns",
             pagination: "local",
-            paginationSize: 50,
+            paginationSize: 1000,
         });
 
         function executeQuery(endpoint, queryData) {
@@ -83,6 +83,7 @@
 
         document.getElementById("iceberg-submit-btn").addEventListener("click", function() {
             var tableName = document.getElementById("iceberg-query-textarea").value;
+            console.log({table_name: tableName})
             executeQuery('/execute_iceberg_query', {table_name: tableName});
         });
     </script>

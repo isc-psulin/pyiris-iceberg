@@ -13,9 +13,23 @@
             padding: 5px;
             width: 300px;
         }
+        .header-bar {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .header-bar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
+    <div class="header-bar">
+        <a href="/">Home</a>
+        <a href="/dataview">Dataview</a>
+    </div>
     {% for table in tables %}
         <h2>{{ table.name }}</h2>
         <input type="text" id="{{ table.name }}-search" class="search-input" placeholder="Search {{ table.name }}...">

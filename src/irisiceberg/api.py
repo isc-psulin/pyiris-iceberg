@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
-from irisiceberg.utils import get_alchemy_engine, Configuration, Base
+from irisiceberg.utils import get_alchemy_engine, Configuration, Base, get_from_list
 from irisiceberg.app import load_config
 import pandas as pd
 from pydantic import BaseModel
@@ -36,10 +36,8 @@ class IcebergQueryRequest(BaseModel):
     table_name: str
 
 # Load Iceberg catalog
-iceberg_catalog = load_catalog(
-    config.target_iceberg.catalog,
-    **config.target_iceberg.properties
-)
+target_iceberg = get_from_list(config.icebergs, config.target_iceberg)
+iceberg_catalog = load_catalog(**target_iceberg.model_dump())
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
@@ -78,7 +76,7 @@ async def search_table(table_name: str, q: str = Query(None), job_id: int = Quer
         SELECT TOP :limit * FROM {table_name}
         WHERE {where_clause}
         """
-        print(query)
+        print(f"Query in search table {query}")
         result = session.execute(text(query), params)
         
         df = pd.DataFrame(result.fetchall(), columns=result.keys())
@@ -116,10 +114,16 @@ async def execute_query(query_request: QueryRequest):
 
 @app.post("/execute_iceberg_query")
 async def execute_iceberg_query(query_request: IcebergQueryRequest):
-    try:
-        table = iceberg_catalog.load_table(query_request.table_name)
-        df = table.scan().to_pandas()
-        
+   # try:
+
+    print(f"execute_iceberg_query - {query_request}")
+    print(iceberg_catalog)
+    
+    table = iceberg_catalog.load_table(query_request.table_name)
+    print(table)
+    if table:
+        df = table.scan(limit=10000).to_pandas()
+        print(f"{len(df)} records returned")
         # Convert Timestamp columns to strings
         for col in df.select_dtypes(include=['datetime64']).columns:
             df[col] = df[col].astype(str)
@@ -129,9 +133,11 @@ async def execute_iceberg_query(query_request: IcebergQueryRequest):
             "columns": df.columns.tolist(),
             "data": df.to_dict(orient="records")
         })
-    except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=400)
-
+    else:
+        return JSONResponse(content={"error": "Table not found"}, status_code=404)
+    # except Exception as e:
+    #     return JSONResponse(content={"error": str(e)}, status_code=400)
+    
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
