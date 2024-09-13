@@ -62,28 +62,28 @@
             paginationSize: 1000,
         });
         {% elif grid_type == "perspective" %}
-        var resultTable = document.getElementById("result-table");
-        var worker = perspective.worker();
-        var table = worker.table([]);
-        var viewer = document.createElement("perspective-viewer");
-        resultTable.appendChild(viewer);
+        const worker = perspective.worker();
+        let table;
+        const viewer = document.createElement("perspective-viewer");
+        document.getElementById("result-table").appendChild(viewer);
         {% endif %}
 
-        function executeQuery(endpoint, queryData) {
-            fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(queryData),
-            })
-            .then(response => {
+        async function executeQuery(endpoint, queryData) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(queryData),
+                });
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                return response.json();
-            })
-            .then(data => {
+
+                const data = await response.json();
+
                 if (data.error) {
                     alert(data.error);
                 } else {
@@ -91,15 +91,18 @@
                     resultTable.setColumns(data.columns.map(col => ({title: col, field: col})));
                     resultTable.setData(data.data);
                     {% elif grid_type == "perspective" %}
-                    table.update(data.data);
-                    viewer.load(table);
+                    if (table) {
+                        table.replace(data.data);
+                    } else {
+                        table = await worker.table(data.data);
+                        await viewer.load(table);
+                    }
                     {% endif %}
                 }
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error('Error:', error);
                 alert('An error occurred while executing the query: ' + error.message);
-            });
+            }
         }
 
         document.getElementById("submit-btn").addEventListener("click", function() {
