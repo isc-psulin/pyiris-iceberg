@@ -1,6 +1,9 @@
 # Local repo ignores
 **docs/
 
+**/**.ipynb 
+
+**configs/**.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

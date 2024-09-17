@@ -58,13 +58,13 @@
         var sqlResultTable = new Tabulator("#sql-result-table", {
             layout: "fitColumns",
             pagination: "local",
-            paginationSize: 10,
+            paginationSize: 1000,
         });
 
         var icebergResultTable = new Tabulator("#iceberg-result-table", {
             layout: "fitColumns",
             pagination: "local",
-            paginationSize: 10,
+            paginationSize: 1000,
         });
 
         async function executeQuery(endpoint, queryData, isIceberg) {

@@ -32,7 +32,7 @@ Below is a list of the Operational Feature, which are classified as either Data 
 4. Get The iris DB-API library, https://intersystems-community.github.io/iris-driver-distribution/
 5. pip install -r requirements.txt
 6. pip install -e .
-7. Add a .env file to the project root with a ADLFS.CONNECTION_STRING (this is only needed for writing to Azure)
+7. Add a .env file to the project root with a adls.CONNECTION_STRING (this is only needed for writing to Azure)
 8. Create a /tmp/iceberg directory, or change the locations in the config for local files
 
 ## Installation Notes
@@ -47,14 +47,16 @@ Below is a list of the Operational Feature, which are classified as either Data 
 
 # TODO
  1. Features
-    1. Add the option to use predefined schemas for IRIS src, pandas, and arrow
-    2. Validate table data: Validate data in iceberg table against data in IRIS table
+    1. Add commands for creating all required schemas: Catalog, admin and iceberg tables.
+    2. Add the option to use predefined schemas for IRIS src, pandas, and arrow
+    3. List all other required functions to expose: List namespaces, etc...
+    4. Validate table data: Validate data in iceberg table against data in IRIS table
           1. Takes any valid SQL conditions and compares each record in the SRC table against the iceberg table
           2. Returns a list of records that do not match
-    3. Add multiprocessing
+    5. Add multiprocessing
  2. Refactoring
-    1. Extract the Database session as a separate class
-    2. Remove loging instantiation from IRIS class
+    1. Extract the Database session as a separate class and seperate from IRIS class
+    2. Move intTests to app.py
  3. Testing
     1. Test all datatype mapping - Create an IRIS class with every possible datatype
 

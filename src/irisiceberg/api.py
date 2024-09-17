@@ -6,29 +6,27 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
-from irisiceberg.utils import get_alchemy_engine, Configuration, Base, get_from_list
+from irisiceberg.utils import get_alchemy_engine, Base, get_from_list, MyBaseSettings
 from irisiceberg.app import load_config
 import pandas as pd
 from pydantic import BaseModel
 from pyiceberg.catalog import load_catalog
 
-
 app = FastAPI()
 templates = Jinja2Templates(directory="/Users/psulin/projects/irisiceberg/templates")
-
 
 # Load configuration
 # sys.path.append("/Users/psulin/projects/irisiceberg/configs")
 # import testing_configs
-
+print(sys.argv)
 # config = getattr(testing_configs, 'iris_src_local_target')
 config = load_config()
-print(f"CONFIG - {config}")
+# print(f"CONFIG - {config}")
 engine = get_alchemy_engine(config)
 Session = sessionmaker(bind=engine)
 
 exclude_tables = []
-grid_type = "tabulator"  # Default to tabulator, can be changed to "perspective"
+grid_type = config.grid_type
 
 class QueryRequest(BaseModel):
     query: str
@@ -47,6 +45,7 @@ async def root(request: Request):
     for table_name in inspector.get_table_names():
         if table_name in Base.metadata.tables:
             if table_name not in exclude_tables:
+                print(f"Getting data for jobs table {table_name}")
                 tables.append({
                     "name": table_name,
                     "columns": [column['name'] for column in inspector.get_columns(table_name)]
@@ -94,6 +93,11 @@ async def search_table(table_name: str, q: str = Query(None), job_id: int = Quer
 async def dataview(request: Request):
     return templates.TemplateResponse("dataview.html", {"request": request, "grid_type": grid_type})
 
+@app.get("/dataview2", response_class=HTMLResponse)
+async def dataview(request: Request):
+    return templates.TemplateResponse("dataview2.html", {"request": request, "grid_type": grid_type})
+
+
 @app.post("/execute_query")
 async def execute_query(query_request: QueryRequest):
     try:
@@ -104,8 +108,9 @@ async def execute_query(query_request: QueryRequest):
             # Convert Timestamp columns to strings
             for col in df.select_dtypes(include=['datetime64']).columns:
                 df[col] = df[col].astype(str)
+
             df = df.fillna(value="")
-            
+            print(f"Records retrieved = {len(df)}")
             return JSONResponse(content={
                 "columns": df.columns.tolist(),
                 "data": df.to_dict(orient="records")
@@ -123,7 +128,7 @@ async def execute_iceberg_query(query_request: IcebergQueryRequest):
     table = iceberg_catalog.load_table(query_request.table_name)
     print(table)
     if table:
-        df = table.scan(limit=10000).to_pandas()
+        df = table.scan(limit=1000).to_pandas()
         print(f"{len(df)} records returned")
         # Convert Timestamp columns to strings
         for col in df.select_dtypes(include=['datetime64']).columns:

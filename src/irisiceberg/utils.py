@@ -4,7 +4,7 @@ import sys
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from typing import Iterable, Optional, List
 
@@ -62,12 +62,27 @@ class IterableWrapper(Iterable):
     def append(self, obj: object, attributes: dict) -> None:
         self.iterator.append((obj, attributes,))
 
-# Pydantic models are used to validate configurations before code is executed
-class MyBaseModel(BaseSettings):
-   # This allows there to be extra fields
-   model_config = ConfigDict(extra='allow', populate_by_name=True)
+def check_for_cli_parsing():
+        cli_apps = ['pytest', 'uvicorn']
+        for cli_app in cli_apps:
+            if cli_app in sys.argv[0]:
+                return False
+        return True
 
-class IRIS_Config(MyBaseModel): 
+# Pydantic models are used to validate configurations before code is executed
+class MyBaseSettings(BaseSettings, cli_exit_on_error=False):
+   
+
+   model_config = SettingsConfigDict(extra='allow', populate_by_name=True, 
+                                     cli_parse_args=check_for_cli_parsing(), cli_exit_on_error=False)
+   
+
+class MyBaseModel(BaseModel):
+   # This allows there to be extra fields
+  # model_config = ConfigDict(extra='allow', populate_by_name=True)
+   model_config = SettingsConfigDict(extra='allow', populate_by_name=True)
+
+class IRISConfig(MyBaseModel): 
     name: str
     database: str
     dialect: str
@@ -78,25 +93,58 @@ class IRIS_Config(MyBaseModel):
     port: Optional[int] = None
     schemas: Optional[list[str]] = []
 
-class Iceberg_Config(MyBaseModel): 
+class CatalogConfig(MyBaseModel): 
     name: str
     uri: Optional[str] = ""
 
-class Configuration(MyBaseModel):
-    servers: Optional[List[IRIS_Config]] = []
-    icebergs: Optional[List[Iceberg_Config]] = []
+class Configuration(MyBaseSettings):
+    job_type: Optional[str] = "info"
+    servers: Optional[List[IRISConfig]] = []
+    icebergs: Optional[List[CatalogConfig]] = []
     src_server: Optional[str] = None
+    source_table_name: Optional[str] = None
+    target_table_name: Optional[str] = None
+    skip_write: Optional[bool] = False
+    sql_clause: Optional[str] = ""
+    target_iceberg: Optional[str] = ""
 
-def get_alchemy_engine(config: Configuration):  
+    # This is required to allow for passing in a string config so that it can be handled by the Pydantic parser
+    config_string: Optional[str] = None
+     
+def get_connection(config: Configuration, server_name: str = None, connection_type: str = None):
+    server_name = server_name if server_name else config.src_server
+    server = get_from_list(config.servers, server_name)
+    connection_type = connection_type if connection_type else server.connection_type
+
+    if server.dialect == "sqlite":
+        logger.debug("Getting SQLite connection")
+        engine = get_alchemy_engine(config, server_name)
+        return engine.connect()
+    elif server.dialect == "iris":
+        if connection_type == "db-api":
+            logger.debug("Getting DBAPI connection")
+            engine = get_alchemy_engine(config, server_name)
+            return engine.connect()
+        elif connection_type == "odbc":
+            logger.debug("Getting ODBC connection")
+            return get_odbc_connection(server)
+
+def get_alchemy_engine(config: Configuration, server_name: str = None):  
     
-    server = get_from_list(config.servers, config.src_server)
+    if server_name:
+        server = get_from_list(config.servers, server_name)
+    else:
+        server = get_from_list(config.servers, config.src_server)
     
-    connection_url = create_connection_url(server)
+    #connection_url = create_connection_url(server)
+    connection_url = get_generic_connection_url(server)
+    start = time.time()
     engine = create_engine(connection_url)
- 
+    engine.connect()
+    logger.debug(f"Creating connection took {time.time()-start} secs")
     return engine
 
-def create_connection_url(server: IRIS_Config, connection_type: str = "db-api"):
+def create_connection_url(server: IRISConfig, connection_type: str = "db-api"):
      
      # Create a connection url from the server properties in this form dialect+driver://username:password@host:port/database
      # Only adding sections if they have a value in the server instance
@@ -106,7 +154,7 @@ def create_connection_url(server: IRIS_Config, connection_type: str = "db-api"):
          url = get_generic_connection_url(server)
          return url
      
-def get_generic_connection_url(server: IRIS_Config):
+def get_generic_connection_url(server: IRISConfig):
     
      seperator = ":///" if server.dialect == "sqlite" else "://"
      driver_dialect = f"{server.dialect}{seperator}" #if not server.driver else f"{server.dialect}+{server.driver}{seperator}"
@@ -116,7 +164,7 @@ def get_generic_connection_url(server: IRIS_Config):
      
      return driver_dialect+user_pass+host_port+database
 
-def get_odbc_connection(server: IRIS_Config):
+def get_odbc_connection(server: IRISConfig):
     
     # Added here to prevent loading if not ever using odbc
     import pyodbc
@@ -127,7 +175,7 @@ def get_odbc_connection(server: IRIS_Config):
     cnxn.setdecoding(pyodbc.SQL_CHAR, encoding='latin1')
     cnxn.setencoding(encoding='utf-8', ctype=pyodbc.SQL_CHAR)
 
-    return cnxn, con_str
+    return cnxn
 
 def get_from_list(lyst: str, name: str) -> MyBaseModel: 
     for item in lyst:

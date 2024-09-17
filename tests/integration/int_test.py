@@ -74,7 +74,6 @@ def list_tables(tablename, config_name: str):
         logger.info(f"{tablename}")
         #logger.info(f"{'.'.join(tablename)}")
 
-
 def update_table(tablename, config_name: str, clause: str = ""):
     config = get_config(config_name)
     ice = create_IRISIceberg(config)
