@@ -46,7 +46,14 @@ base = {
             "uri": "iris://_SYSTEM:sys@localhost:5551/USER",
             "warehouse": "/tmp/iceberg",
             "type": "sqlite",
-        }
+        },
+        {
+            "name": "Azure",
+            "uri": "iris://_SYSTEM:sys@localhost:5551/USER",
+            "adls.connection-string": os.environ.get("adls.CONNECTION_STRING"),
+            "adls.account-name": "",
+            "location": "abfs://??",
+        },
     ] 
 }
 
