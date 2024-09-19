@@ -93,6 +93,7 @@ def load_config():
     config = Configuration(**config)
     return config 
 
+
 def main(config_str: str = None):
 
     # config is detemined in this order: passed as arg, passed as CLI arg
@@ -109,7 +110,7 @@ def main(config_str: str = None):
         sys.exit(1)
     
     try:
-        config_dict = config_dict = json.loads(config_str)
+        config_dict = json.loads(config_str)
     except Exception as ex:
         logger.error(f"Failed to load config as JSON: {ex}")
         sys.exit(1)

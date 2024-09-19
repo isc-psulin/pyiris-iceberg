@@ -260,10 +260,12 @@ def read_sql_to_df(connection, table_name, clause: str = '', chunksize: int = 50
     logger.debug(f"Query: {query}")
     
     df_iter = pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize)
+    connection.close()
     not_empty = True
     while not_empty:
         start_time = time.time()
         try:
+            
             df = next(df_iter)
             load_time = time.time() - start_time
             logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds at {df.shape[0]/load_time} per sec")
@@ -387,15 +389,6 @@ class IcebergJobStep(Base):
     src_max_id = Column(BigInteger)
     src_timestamp = Column(DateTime)
 
-def create_iceberg_catalog_tables(target_iceberg):
-
-    engine = create_engine(target_iceberg.uri)
-    try:
-        logger.info("Creating iceberg catalog tables")
-        SqlCatalogBaseTable.metadata.create_all(engine)
-    except Exception:
-        logger.error("Error Creating iceberg catalog tables")
-
 class LogEntry(Base):
     __tablename__ = "log_entries"
 
@@ -408,41 +401,52 @@ class LogEntry(Base):
     function_name = Column(String(500))
     line = Column(Integer)
 
-from sqlalchemy.orm import sessionmaker
+
+def create_iceberg_catalog_tables(target_iceberg):
+
+    engine = create_engine(target_iceberg.uri)
+    try:
+        logger.info("Creating iceberg catalog tables")
+        SqlCatalogBaseTable.metadata.create_all(engine)
+    except Exception:
+        logger.error("Error Creating iceberg catalog tables")
+
+
 from contextvars import ContextVar
 
-current_job_id = ContextVar('current_job_id', default=None)
+# current_job_id = ContextVar('current_job_id', default=None)
 
-class SQLAlchemyLogHandler:
-    def __init__(self, engine):
-        self.engine = engine
-        self.Session = sessionmaker(bind=engine)
 
-    def write(self, message):
-        record = message.record
-        log_entry = LogEntry(
-            job_id=current_job_id.get(),
-            level=record["level"].name,
-            message=record["message"],
-            module=record["module"],
-            function_name=record["function"],
-            line=record["line"]
-        )
+# class SQLAlchemyLogHandler:
+#     def __init__(self, engine):
+#         self.engine = engine
+#         self.Session = sessionmaker(bind=engine)
+
+#     def write(self, message):
+#         record = message.record
+#         log_entry = LogEntry(
+#             job_id=current_job_id.get(),
+#             level=record["level"].name,
+#             message=record["message"],
+#             module=record["module"],
+#             function_name=record["function"],
+#             line=record["line"]
+#         )
         
-        with self.Session() as session:
-            session.add(log_entry)
-            session.commit()
+#         with self.Session() as session:
+#             session.add(log_entry)
+#             session.commit()
 
 # Global logger instance
 logger.remove()  # Remove default handler
 logger.add(sys.stderr, level="DEBUG")  # Add console handler
 
 
-def initialize_logger(engine, min_db_level="DEBUG"):
-    # Create the log_entries table
-    Base.metadata.create_all(engine)
+# def initialize_logger(engine, min_db_level="DEBUG"):
+#     # Create the log_entries table
+#     Base.metadata.create_all(engine)
     
-    # Add SQLAlchemy handler
-    db_handler = SQLAlchemyLogHandler(engine)
-    logger.add(db_handler.write, level=min_db_level)
-    return logger
+#     # Add SQLAlchemy handler
+#     db_handler = SQLAlchemyLogHandler(engine)
+#     logger.add(db_handler.write, level=min_db_level)
+#     return logger

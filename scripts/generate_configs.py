@@ -8,10 +8,10 @@ load_dotenv()
 
 base = {
     "job_type": "list_tables",
-    "table_chunksize": 100000,
+    "table_chunksize": 100,
     "sql_clause": "",
-    "source_table_name": "",
-    "target_table_name": "",
+    "source_table_name": "DevData",
+    "target_table_name": "DevStats.DevData",
     "partition_field": "ID",
     "servers": [
         {
@@ -63,20 +63,14 @@ local_testing_config = {
     "target_iceberg": "LocalTesting",
 }
 
-iris_src_local_target_config = {
-    "src_server": "LocalIRIS",
-    "target_iceberg": "IRISCatalogLocalWarehouse",
-}
-
-
 local_testing_config.update(base)
-iris_src_local_target_config.update(base)
 
 if __name__ == "__main__":
-    
-    # Generates a json config for any dictionary defined that ends with _config
-    working_dir = os.getcwd()
 
-    configs = [k for k,v in locals().items() if k.endswith("_config")]
-    for c in configs:
-        json.dump(locals()[c], open(os.path.join(working_dir,f'../configs/{c}.json'), "w"), indent=2)
+    current_dir = os.getcwd()
+    config_path = os.path.join(current_dir, 'local_testing_config.json')
+     
+    # Generates a json config for any dictionary defined that ends with _config
+    json.dump(local_testing_config, open(config_path, "w"), indent=2)
+    with open('.env', "w") as fo:
+        fo.writelines(f'IRISICE_CONFIG_PATH="{config_path}"')

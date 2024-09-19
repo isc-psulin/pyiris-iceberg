@@ -15,6 +15,50 @@ CREATE TABLE DevData (
 	hl7String VARCHAR(4096)
 );
 
+DROP TABLE IF EXISTS  iceberg_job;
+CREATE TABLE iceberg_job (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	start_time DATETIME,
+	end_time DATETIME,
+	job_name VARCHAR,
+	action_name VARCHAR,
+	tablename VARCHAR,
+	catalog_name VARCHAR,
+	src_min_id BIGINT,
+	src_max_id BIGINT,
+	src_row_count BIGINT,
+	src_timestamp DATETIME,
+	job_status VARCHAR,
+	error_message VARCHAR
+);
+
+DROP TABLE IF EXISTS iceberg_job_step;
+
+CREATE TABLE iceberg_job_step (
+	id INTEGER,
+	job_id INTEGER,
+	start_time DATETIME,
+	end_time DATETIME,
+	src_min_id BIGINT,
+	src_max_id BIGINT,
+	src_timestamp DATETIME
+);
+
+
+DROP TABLE IF EXISTS log_entries;
+
+CREATE TABLE log_entries (
+	id INTEGER,
+	job_id INTEGER,
+	log_time DATETIME,
+	"level" VARCHAR,
+	message VARCHAR,
+	module VARCHAR,
+	function_name VARCHAR,
+	line INTEGER
+);
+
+
 
 INSERT INTO DevData (ID, app, site, device, mrn, name, timeReceived, mshDateTime, obsDateTime, hl7Id, hl7Source, hl7String) VALUES(1, 'GE', 'BWH', 'B1459', '526967537', 'Taylor,Brian E.', '2024-09-13 00:00:00.000', '2024-09-02', '2024-08-31', '9681639589571', '1441_GE_ORU_HL7_in', 'MSH|^~\&|SendingApp|SendingFacility|ReceivingApp|ReceivingFacility|2024-09-06 16:36:15||ORU^R01|404399|P|2.3
 PID|1||6307042||Petersburg^Elvira||2024-09-06|F|||||||||||||||
