@@ -5,8 +5,8 @@ load_dotenv()
 
 base = {
     "table_chunksize": 50000,
-    "sql_clause": "ID < 3000",
-    "table_name": "FS.AccountPosition2",
+    "sql_clause": "",
+    "table_name": "",
     "partition_field": "ID",
     "servers": [
         {
@@ -41,34 +41,17 @@ base = {
             "name": "Azure",
             "uri": "iris://_SYSTEM:sys@localhost:1972/USER",
             "adls.connection-string": os.environ.get("adls.CONNECTION_STRING"),
-            "adls.account-name": "testiris",
-            "location": "abfs://mgb"
+            "adls.account-name": "",
+            "location": "abfs://"
         }
         ]
 }
 
-local_testing = {
-    "src_server": "LocalTesting",
-    "admin_server": "LocalTesting",
-    "catalog_server": "LocalTesting",
-    "target_iceberg": "LocalTesting"
-}
 
 iris_src_local_target = {
     "src_server": "LocalIRIS",
-    "admin_server": "LocalIRIS",
-    "catalog_server": "LocalTesting",
     "target_iceberg": "LocalTesting"
 }
 
-iris_src_azure_target = {
-    "src_server": "LocalIRIS",
-    "admin_server": "LocalIRIS",
-    "catalog_server": "LocalIRIS",
-    "target_iceberg": "Azure"
-}
 
-
-local_testing.update(base)
 iris_src_local_target.update(base)
-iris_src_azure_target.update(base)

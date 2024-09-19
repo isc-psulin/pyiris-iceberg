@@ -147,3 +147,4 @@ async def execute_iceberg_query(query_request: IcebergQueryRequest):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
+    

@@ -75,7 +75,7 @@ class IRIS:
     def get_table_stats(self, tablename, clause):
         
         partition_fld = self.config.partition_field
-        where = f"WHERE {clause}" if clause else ""
+        where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
         sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} {where}"
         df = pd.read_sql(sql, self.connect())
         return int(df['row_count'][0]), int(df['min_val'][0]), int(df['max_val'][0])
@@ -169,12 +169,19 @@ class IcebergIRIS:
             iris_data = utils.downcast_timestamps(iris_data)
             arrow_data = pa.Table.from_pandas(iris_data)
             
-            # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
-            start_time = time.time()
-            iceberg_table.append(arrow_data)
-            load_time = time.time() - start_time
-            logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time} per sec")
-            
+            skip_write = True if self.config.skip_write == True else False
+            print(skip_write, self.config.skip_write )
+            if not skip_write:
+               
+                # Write the data to the iceberg table
+                # iceberg_table.overwrite Could use this for first table write, would handle mid update fails as a start over.
+                start_time = time.time()
+                iceberg_table.append(arrow_data)
+                load_time = time.time() - start_time
+                logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time} per sec")
+            else:
+                logger.info(f"Skipping write to iceberg table {self.config.target_table_name}")
+                
             # Record job step
             step_end_time = datetime.now()
             minval = 0 if pd.isna(iris_data[self.config.partition_field].min()) else iris_data[self.config.partition_field].min()

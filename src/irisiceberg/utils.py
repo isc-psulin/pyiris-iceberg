@@ -107,6 +107,9 @@ class Configuration(MyBaseSettings):
     skip_write: Optional[bool] = False
     sql_clause: Optional[str] = ""
     target_iceberg: Optional[str] = ""
+    table_chunksize: Optional[int] = 100000
+    skip_write: Optional[bool] = False
+
 
     # This is required to allow for passing in a string config so that it can be handled by the Pydantic parser
     config_string: Optional[str] = None
@@ -253,6 +256,7 @@ def read_sql_to_df(connection, table_name, clause: str = '', chunksize: int = 50
               for col in columns}
     
     where = f"WHERE {clause}" if clause else ''
+    where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
     query = f"SELECT * FROM {table_name} {where}"
     logger.debug(f"Query: {query}")
     
