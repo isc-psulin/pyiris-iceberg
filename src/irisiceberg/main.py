@@ -20,7 +20,9 @@ from irisiceberg.utils import create_iceberg_catalog_tables, initialize_logger, 
 from irisiceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker
+import logging 
 
+logging.getLogger('sqlalchemy.engine').setLevel(logging.DEBUG)
 # TODO - move this to a config file
 # Used is no config is provided when creating IRISIceberg
 ICEBERG_IRIS_CONFIG_TABLE = "IcebergConfig"
@@ -34,7 +36,7 @@ class IRIS:
 
     def create_engine(self):
         self.engine = get_alchemy_engine(self.config)
-        initialize_logger(self.engine)
+        #initialize_logger(self.engine)
         self.logger = logger
         self.logger.debug(f"Created Engine: {self.engine.url}")
 
@@ -148,6 +150,7 @@ class IcebergIRIS:
             )
             session.add(job)
             session.flush()  # This will populate the job.id
+             
 
         # Set the current job ID for logging
         utils.current_job_id.set(job.id)
@@ -170,7 +173,7 @@ class IcebergIRIS:
             arrow_data = pa.Table.from_pandas(iris_data)
             
             skip_write = True if self.config.skip_write == True else False
-            print(skip_write, self.config.skip_write )
+
             if not skip_write:
                
                 # Write the data to the iceberg table
@@ -195,7 +198,7 @@ class IcebergIRIS:
                 src_timestamp=step_start_time
             )
             session.add(job_step)
-            session.commit()
+            session.flush()
 
             del iris_data, arrow_data
             gc.collect()
@@ -203,8 +206,7 @@ class IcebergIRIS:
 
         # Update the main job record with the end time
         job.end_time = datetime.now()
-        session.commit()
-        session.close()
+        session.flush()
 
         # Reset the current job ID
         utils.current_job_id.set(None)
@@ -221,8 +223,9 @@ class IcebergIRIS:
         # Create iceberg catalog tables if they do not exist
         create_iceberg_catalog_tables(self.iceberg.target_iceberg)
 
-        # Ensure the Iceberg tables exist
-        self.create_iceberg_table(self.config.target_table_name)
+        # # Ensure the Iceberg tables exist
+        # self.create_iceberg_table(target_tablename=self.config.target_table_name, 
+        #                           source_tablename=self.config.source_table_name)
 
         # Create a session
         Session = sessionmaker(bind=self.iris.engine)
@@ -238,12 +241,12 @@ class IcebergIRIS:
             tablename=self.config.source_table_name,
             catalog_name=self.iceberg.catalog.name
         )
-        session.add(job)
-        session.flush()  # This will populate the job.id
-        #session.refresh(job)
+        session.add(job)  
+        session.flush()
          
         # Create table, deleting if it exists
-        iceberg_table = self.create_iceberg_table(self.config.target_table_name)
+        iceberg_table = self.create_iceberg_table(target_tablename=self.config.target_table_name, 
+                                                  source_tablename=self.config.source_table_name)
         logger.info(f"Created table {self.config.target_table_name}")
 
 
@@ -263,7 +266,7 @@ class IcebergIRIS:
         except pyiceberg.exceptions.NoSuchTableError as ex:
             logger.error(f"Cannot purge table {tablename}:  {ex}")
 
-    def create_iceberg_table(self, tablename: str):
+    def create_iceberg_table(self, target_tablename: str, source_tablename: str):
         '''
         1. Delete the table if it exists 
             TODO - Confirm that the data is also deleted
@@ -274,36 +277,36 @@ class IcebergIRIS:
         '''
 
         # If the table exists, drop it
-        if self.iceberg.catalog.table_exists(tablename):
-            self.iceberg.catalog.drop_table(tablename)
+        if self.iceberg.catalog.table_exists(target_tablename):
+            self.iceberg.catalog.drop_table(target_tablename)
         
         if not self.iris.metadata:
             self.iris.load_metadata()
 
-        schema = self.create_table_schema(tablename)   
+        schema = self.create_table_schema(source_tablename)   
         print(f"Iceberg schema {schema}")
         logger.info(f"Iceberg schema {schema}")
 
         # Create the namespace
         #tablename_only = tablename.split(".")[-1]
-        namespace = ".".join(tablename.split(".")[:-1])
+        namespace = ".".join(target_tablename.split(".")[:-1])
         self.iceberg.catalog.create_namespace_if_not_exists(namespace)
 
         # Create the table
         location = self.iceberg.catalog.properties.get("location")
 
         #partition_spec = pyiceberg.partitioning.PartitionSpec(pyiceberg.partitioning.PartitionField(name='ID'))
-        print(schema)
         if location:
-            logger.debug(f"TABLENAME _ {tablename}")
-            table = self.iceberg.catalog.create_table(identifier=tablename,schema=schema, 
+            logger.debug(f"TABLENAME _ {target_tablename}")
+            table = self.iceberg.catalog.create_table(identifier=target_tablename,schema=schema, 
                                                       location=location)
         else:
-            table = self.iceberg.catalog.create_table(identifier=tablename,schema=schema)
+            table = self.iceberg.catalog.create_table(identifier=target_tablename,schema=schema)
         
         return table 
 
     def create_table_schema(self, tablename: str):
+         print(self.iris.metadata)
          table = self.iris.metadata.tables[tablename]
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema

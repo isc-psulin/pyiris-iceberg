@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 from irisiceberg.main import IcebergIRIS
 from irisiceberg.utils import Configuration, logger
 
-load_dotenv()
+load_dotenv(verbose=True)
 CONFIG_PATH = os.getenv("IRISICE_CONFIG_PATH")
-CONFIG_NAME = os.getenv("IRISICE_CONFIG_NAME")
+print(CONFIG_PATH)
 
 def create_IRISIceberg(config: Configuration):
 
@@ -27,6 +27,7 @@ def purge_table(config: Configuration):
     ice = create_IRISIceberg(config)
     try:
         ice.iceberg.catalog.purge_table(tablename)
+        logger.info(f"Purged table {tablename}")
     except pyiceberg.exceptions.NoSuchTableError as ex:
         logger.error(f"Cannot purge table {tablename}:  {ex}")
         #logger.error(f"Cannot purge table {tablename} because it does not exist")
@@ -66,6 +67,7 @@ def list_tables(config: Configuration):
     for ns in namespaces:
         tables[ns] = ice.iceberg.catalog.list_tables(ns) 
     
+    logger.info(f"Found {len(tables.items())} tables")
     for ns, tablename in tables.items():
         logger.info(f"{tablename}")
 

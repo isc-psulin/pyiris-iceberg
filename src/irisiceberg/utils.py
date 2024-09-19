@@ -76,7 +76,6 @@ class MyBaseSettings(BaseSettings, cli_exit_on_error=False):
    model_config = SettingsConfigDict(extra='allow', populate_by_name=True, 
                                      cli_parse_args=check_for_cli_parsing(), cli_exit_on_error=False)
    
-
 class MyBaseModel(BaseModel):
    # This allows there to be extra fields
   # model_config = ConfigDict(extra='allow', populate_by_name=True)
@@ -429,6 +428,7 @@ class SQLAlchemyLogHandler:
             function_name=record["function"],
             line=record["line"]
         )
+        
         with self.Session() as session:
             session.add(log_entry)
             session.commit()

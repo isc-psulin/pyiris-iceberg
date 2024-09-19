@@ -10,7 +10,8 @@ base = {
     "job_type": "list_tables",
     "table_chunksize": 100000,
     "sql_clause": "",
-    "table_name": "",
+    "source_table_name": "",
+    "target_table_name": "",
     "partition_field": "ID",
     "servers": [
         {
@@ -57,7 +58,6 @@ base = {
     ] 
 }
 
-# No local data yet 
 local_testing_config = {
     "src_server": "LocalTesting",
     "target_iceberg": "LocalTesting",
@@ -74,9 +74,9 @@ iris_src_local_target_config.update(base)
 
 if __name__ == "__main__":
     
-    if len(sys.argv) == 2:
-    
-        if sys.argv[1] == "gen":
-            configs = [k for k,v in locals().items() if k.endswith("_config")]
-            for c in configs:
-                json.dump(locals()[c], open(f'./configs/{c}' + ".json", "w"), indent=2)
+    # Generates a json config for any dictionary defined that ends with _config
+    working_dir = os.getcwd()
+
+    configs = [k for k,v in locals().items() if k.endswith("_config")]
+    for c in configs:
+        json.dump(locals()[c], open(os.path.join(working_dir,f'../configs/{c}.json'), "w"), indent=2)
