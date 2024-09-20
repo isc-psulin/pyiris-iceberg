@@ -1,8 +1,7 @@
 # IRIS-ICEBERG
 The iris-iceberg library provides utilities for replicating IRIS(SQL) tables into Iceberg tables. It uses the pyiceberg, https://py.iceberg.apache.org/, library to interact with iceberg tables.
 
-This project is meant as an exploration of Iceberg and the PyIceberg library. The primary goal of this exploration is to test replicating IRIS tables into Iceberg tables. The easiest way to test the library is to use the CLI shown in Basic Commands.
-
+This project is meant as an exploration of Iceberg and the PyIceberg library and replicating IRIS tables into Iceberg tables. The easiest way to test the library is to use the CLI shown in Basic Commands.
 
 ## Installation
 1. git clone git@github.com:isc-patrick/iris-iceberg.git
@@ -43,8 +42,8 @@ In the environment setup, you added data to a source table and created a config 
    3. Run the list tables command again  
 3. irice --job_type=update_table
    1. Run the find command and you will see the data has all been compied over again. 
-4. irice --job_type=purge-table
-5. Run the find command again and you will see that the data has been removed
+4. irice --job_type=purge_table
+5. Run the find command again and you will see that the data files has been removed
 
 ## Configurations
 
