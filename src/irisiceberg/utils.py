@@ -63,7 +63,8 @@ class IterableWrapper(Iterable):
         self.iterator.append((obj, attributes,))
 
 def check_for_cli_parsing():
-        cli_apps = ['pytest', 'uvicorn', 'jupyter']
+        cli_apps = ['pytest', 'uvicorn', 'jupyter', 'ipykernel']
+        logger.info(f"SYS>ARGV - {sys.argv[0].lower()}")
         for cli_app in cli_apps:
             if cli_app in sys.argv[0].lower():
                 return False

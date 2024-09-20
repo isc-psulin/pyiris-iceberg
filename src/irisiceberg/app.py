@@ -74,18 +74,9 @@ def update_table(config: Configuration):
     ice = create_IRISIceberg(config)
     ice.update_iceberg_table(config.table_name, config.sql_clause)
 
-def load_config_old():
-    # Load the module from the given path
-    spec = importlib.util.spec_from_file_location('configuration', CONFIG_PATH)
-    module = importlib.util.module_from_spec(spec)
-    loaded = spec.loader.exec_module(module)
-    
-    config_dict = getattr(module, CONFIG_NAME)
-    config = Configuration(**config_dict)
-    return config 
-
 def load_config():
     
+    logger.info(f"argv - {sys.argv}")
     config = json.load(open(CONFIG_PATH))
     logger.info(f"Loaded config from {CONFIG_PATH}")
     config = Configuration(**config)
