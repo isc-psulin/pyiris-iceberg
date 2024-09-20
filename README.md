@@ -14,14 +14,14 @@ This project is meant as an exploration of Iceberg and the PyIceberg library. Th
 
 
 ## Usage
-__Setup environment__
+__Setup environment__  
 1. Generate a json config file. This also generates a .env file that points to this config files location
    1. python scripts/generate_configs.py
 2. Create a /tmp/iceberg directory, or change the locations in the config for local files
 3. Load data into sqlite
    1. sqlite3 /tmp/iceberg/test.db < data/devdata.sql 
 
-__Basic commands__
+__Basic commands__  
 There are just a few commands using the CLI, irice
    * irice --job_type=list_tables
        - Lists all the tables in the Iceberg catalog
@@ -32,7 +32,7 @@ There are just a few commands using the CLI, irice
    * irice --job_type=purge-table
       - Deletes the Iceberg table from the catalog and the metadata and data files
 
-__Simple walkthrough of commands with locally installed data__
+__Simple walkthrough of commands with locally installed data__  
 In the environment setup, you added data to a source table and created a config file that you be used for initial. Follow these steps to walk through the basic commands
 1. irice --job_type=list_tables
    1. Lists all of the tables in the Catalog 
