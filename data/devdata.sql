@@ -35,7 +35,7 @@ CREATE TABLE iceberg_job (
 DROP TABLE IF EXISTS iceberg_job_step;
 
 CREATE TABLE iceberg_job_step (
-	id INTEGER,
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	job_id INTEGER,
 	start_time DATETIME,
 	end_time DATETIME,

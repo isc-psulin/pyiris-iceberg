@@ -8,14 +8,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from typing import Iterable, Optional, List
 
-import iris
-
 from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
 from pyiceberg.catalog.sql import IcebergNamespaceProperties, IcebergTables, SqlCatalogBaseTable
 from pyiceberg.types import NestedField
-import pytest
+from sqlalchemy.orm import sessionmaker
 import pandas as pd
 from loguru import logger
 from sqlalchemy.orm import declarative_base
@@ -379,39 +377,39 @@ def create_iceberg_catalog_tables(target_iceberg):
 
 from contextvars import ContextVar
 
-# current_job_id = ContextVar('current_job_id', default=None)
+current_job_id = ContextVar('current_job_id', default=None)
 
 
-# class SQLAlchemyLogHandler:
-#     def __init__(self, engine):
-#         self.engine = engine
-#         self.Session = sessionmaker(bind=engine)
+class SQLAlchemyLogHandler:
+    def __init__(self, engine):
+        self.engine = engine
+        self.Session = sessionmaker(bind=engine)
 
-#     def write(self, message):
-#         record = message.record
-#         log_entry = LogEntry(
-#             job_id=current_job_id.get(),
-#             level=record["level"].name,
-#             message=record["message"],
-#             module=record["module"],
-#             function_name=record["function"],
-#             line=record["line"]
-#         )
+    def write(self, message):
+        record = message.record
+        log_entry = LogEntry(
+            job_id=current_job_id.get(),
+            level=record["level"].name,
+            message=record["message"],
+            module=record["module"],
+            function_name=record["function"],
+            line=record["line"]
+        )
         
-#         with self.Session() as session:
-#             session.add(log_entry)
-#             session.commit()
+        with self.Session() as session:
+            session.add(log_entry)
+            session.commit()
 
 # Global logger instance
 logger.remove()  # Remove default handler
-logger.add(sys.stderr, level="DEBUG")  # Add console handler
+logger.add(sys.stderr, level="INFO")  # Add console handler
 
 
-# def initialize_logger(engine, min_db_level="DEBUG"):
-#     # Create the log_entries table
-#     Base.metadata.create_all(engine)
+def initialize_logger(engine, min_db_level="INFO"):
+    # Create the log_entries table
+    Base.metadata.create_all(engine)
     
-#     # Add SQLAlchemy handler
-#     db_handler = SQLAlchemyLogHandler(engine)
-#     logger.add(db_handler.write, level=min_db_level)
-#     return logger
+    # Add SQLAlchemy handler
+    db_handler = SQLAlchemyLogHandler(engine)
+    logger.add(db_handler.write, level=min_db_level)
+    return logger

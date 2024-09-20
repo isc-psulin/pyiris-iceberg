@@ -15,14 +15,12 @@ from sqlalchemy.orm import Session
 
 # Local package
 import irisiceberg.utils as utils
-from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap
+from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap, initialize_logger
 from irisiceberg.utils import create_iceberg_catalog_tables, logger
 from irisiceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker, Session
 import logging 
-
-
 
 class IRIS:
 
@@ -33,7 +31,7 @@ class IRIS:
 
     def create_engine(self):
         self.engine = get_alchemy_engine(self.config)
-        #initialize_logger(self.engine)
+        initialize_logger(self.engine)
         self.logger = logger
         self.logger.debug(f"Created Engine: {self.engine.url}")
 
@@ -133,10 +131,10 @@ class IcebergIRIS:
                 src_min_id=min_id,
                 src_max_id=max_id
             )
+            session.add(job) 
+            session.flush()
             job_id = job.id
-            session.add(job)  
             session.commit()
- 
 
         return job_id
 
@@ -198,23 +196,15 @@ class IcebergIRIS:
             sys.exit(1)
 
         if job_id is None:
-            row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
             job_id = self.create_job(row_count, min_id, max_id)
 
         if not self.iris.metadata:
             self.iris.load_metadata()
-        # Set the current job ID for logging
-        #utils.current_job_id.set(job_id)
-
-        server = self.iris.get_server()
-        if server.connection_type == "odbc":
-            connection = self.iris.get_odbc_connection()
-        else:
-            connection = self.iris.engine.connect()
         
-        # for iris_data in self.read_sql_to_df(connection, self.config.source_table_name, 
-        #                                 clause = self.config.sql_clause, chunksize=self.config.table_chunksize,
-        #                                 metadata=self.iris.metadata):
+        # Set the current job ID for logging
+        utils.current_job_id.set(job_id)
+
+        row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
         for iris_data in self.read_sql_to_df(self.config.source_table_name, min_id, max_id, row_count):
             step_start_time = datetime.now()
 
@@ -248,7 +238,7 @@ class IcebergIRIS:
             session.close()
         
         # Reset the current job ID
-        #utils.current_job_id.set(None)
+        utils.current_job_id.set(None)
 
         logger.info(f"Completed updating and recording job summaries for {self.config.target_table_name}")
 
@@ -264,6 +254,7 @@ class IcebergIRIS:
 
         # Create the main job record
         job_id =  self.create_job()
+        print(f"Job ID {job_id}")
          
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(target_tablename=self.config.target_table_name, 
@@ -273,7 +264,6 @@ class IcebergIRIS:
         self.update_iceberg_table(job_id)
 
         # Update the main job record with the end time
-        
         with Session(self.iris.engine) as session:
             job = IcebergJob(id=job_id)
             job.end_time = datetime.now()

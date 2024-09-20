@@ -93,7 +93,6 @@ def load_config():
     config = Configuration(**config)
     return config 
 
-
 def main(config_str: str = None):
 
     # config is detemined in this order: passed as arg, passed as CLI arg
