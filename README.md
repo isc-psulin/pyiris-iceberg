@@ -23,14 +23,14 @@ __Setup environment__
 
 __Basic commands__
 There are just a few commands using the CLI, irice
-   > irice --job_type=list_tables
-      Lists all the tables in the Iceberg catalog
-   > irice --job_type=initial_table_sync
-      Uses a source table to create an Iceberg table, using the schema data from the source table, and copies the data from the source table into the target Iceberg table. The values for these are all in the config file with easy to understand names like source_tablename, target_tablename, etc. This will also create the Iceberg catalog tables if necessary.
-   > irice --job_type=update_table
-      This copies the data form a source table to a target table, but does not create the Iceberg table or create the Iceberg catalog tables
-   > irice --job_type=purge-table
-      Deletes the Iceberg table from the catalog and the metadata and data files
+   * irice --job_type=list_tables
+       - Lists all the tables in the Iceberg catalog
+   * irice --job_type=initial_table_sync
+      - Uses a source table to create an Iceberg table, using the schema data from the source table, and copies the data from the source table into the target Iceberg table. The values for these are all in the config file with easy to understand names like source_tablename, target_tablename, etc. This will also create the Iceberg catalog tables if necessary.
+   * irice --job_type=update_table
+      - This copies the data form a source table to a target table, but does not create the Iceberg table or create the Iceberg catalog tables
+   * irice --job_type=purge-table
+      - Deletes the Iceberg table from the catalog and the metadata and data files
 
 __Simple walkthrough of commands with locally installed data__
 In the environment setup, you added data to a source table and created a config file that you be used for initial. Follow these steps to walk through the basic commands
