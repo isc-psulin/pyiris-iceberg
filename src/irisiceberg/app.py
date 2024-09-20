@@ -74,7 +74,7 @@ def list_tables(config: Configuration):
 def update_table(config: Configuration):
 
     ice = create_IRISIceberg(config)
-    ice.update_iceberg_table(config.table_name, config.sql_clause)
+    ice.update_iceberg_table()
 
 def load_config_old():
     # Load the module from the given path

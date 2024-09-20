@@ -190,7 +190,6 @@ class IcebergIRIS:
             connection.close()
             yield df
 
-
     def update_iceberg_table(self, job_id: int = None):
         
         iceberg_table = self.iceberg.load_table(self.config.target_table_name)
@@ -202,6 +201,8 @@ class IcebergIRIS:
             row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
             job_id = self.create_job(row_count, min_id, max_id)
 
+        if not self.iris.metadata:
+            self.iris.load_metadata()
         # Set the current job ID for logging
         #utils.current_job_id.set(job_id)
 
