@@ -3,6 +3,8 @@ The iris-iceberg library provides utilities for replicating IRIS(SQL) tables int
 
 This project is meant as an exploration of Iceberg and the PyIceberg library and replicating IRIS tables into Iceberg tables. The easiest way to test the library is to use the CLI shown in Basic Commands.
 
+The development has ben done on a mac and the following commands should work for Mac and Linux. Windows users will have to adjust some of these commands.
+
 ## Installation
 1. git clone git@github.com:isc-patrick/iris-iceberg.git
 2. cd iris-iceberg
