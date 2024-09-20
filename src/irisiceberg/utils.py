@@ -307,7 +307,7 @@ def generate_select_queries(min_id: int, max_id: int, partition_size:int, tablen
                  " AND id < " + str(query_max_id)
         
         if clause:
-            query = " AND " + clause
+            query += " AND " + clause
         
         queries_obj.append(query, {"table": tablename, "min_id": query_min_id, "max_id": query_max_id})
         

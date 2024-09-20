@@ -16,7 +16,9 @@ setup(name='irisiceberg',
                         'pydantic==2.8.2',
                         'pydantic-settings==2.5.0',
                         'pydantic_core==2.20.1',
-                        'sqlalchemy>=2.0', 'adlfs==2024.7.0'],
+                        'sqlalchemy>=2.0', 
+                        'adlfs==2024.7.0',
+                        'pyodbc==5.1.0'],
       entry_points={
         'console_scripts': [
             'irice=irisiceberg.app:main'
