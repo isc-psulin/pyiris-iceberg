@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 # Local package
 import irisiceberg.utils as utils
-from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, read_sql_to_df, sql_to_pandas_typemap
+from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap
 from irisiceberg.utils import create_iceberg_catalog_tables, logger
 from irisiceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
 from datetime import datetime
@@ -175,14 +175,10 @@ class IcebergIRIS:
         
         clause = self.config.sql_clause
         chunksize = self.config.table_chunksize
-        where = f"WHERE {clause}" if clause else ''
-        where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
-        #query = f"SELECT * FROM {source_tablename} {where}"
-        #logger.debug(f"Query: {query}")
         
-        ##connection = self.get_connection(self.iris.get_server())
+     
         sql_queries = utils.generate_select_queries(tablename=source_tablename, min_id=min_id, max_id=max_id, partition_size=chunksize, clause=clause)
-       
+        
         for query in sql_queries:
             select = query[0][0]
             print(select)
@@ -193,19 +189,6 @@ class IcebergIRIS:
             logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds at {df.shape[0]/load_time} per sec")
             connection.close()
             yield df
-
-        # df_iter = pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize)
-        # connection.close
-        # not_empty = True
-        # while not_empty:
-        #     start_time = time.time()
-        #     try:
-        #         df = next(df_iter)
-        #         load_time = time.time() - start_time
-        #         logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds at {df.shape[0]/load_time} per sec")
-        #         yield df
-        #     except StopIteration as stop:
-        #         break
 
 
     def update_iceberg_table(self, job_id: int = None):
