@@ -195,6 +195,7 @@ class IcebergIRIS:
             logger.error(f"Cannot load table, exiting")
             sys.exit(1)
 
+        row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
         if job_id is None:
             job_id = self.create_job(row_count, min_id, max_id)
 
@@ -204,7 +205,7 @@ class IcebergIRIS:
         # Set the current job ID for logging
         utils.current_job_id.set(job_id)
 
-        row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
+        
         for iris_data in self.read_sql_to_df(self.config.source_table_name, min_id, max_id, row_count):
             step_start_time = datetime.now()
 
