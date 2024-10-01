@@ -8,14 +8,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from typing import Iterable, Optional, List
 
-import iris
-
 from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
 from pyiceberg.catalog.sql import IcebergNamespaceProperties, IcebergTables, SqlCatalogBaseTable
 from pyiceberg.types import NestedField
-import pytest
+from sqlalchemy.orm import sessionmaker
 import pandas as pd
 from loguru import logger
 from sqlalchemy.orm import declarative_base
@@ -23,7 +21,7 @@ import logging
 from datetime import datetime
 
 import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings('ignore')
 
 # Create a Base class for declarative models
 Base = declarative_base()
@@ -66,10 +64,9 @@ class IterableWrapper(Iterable):
         self.iterator.append((obj, attributes,))
 
 def check_for_cli_parsing():
-        cli_apps = ['pytest', 'uvicorn', 'jupyter', 'ipykernel']
-        logger.trace(f"SYS>ARGV - {sys.argv[0].lower()}")
+        cli_apps = ['pytest', 'uvicorn']
         for cli_app in cli_apps:
-            if cli_app in sys.argv[0].lower():
+            if cli_app in sys.argv[0]:
                 return False
         return True
 
@@ -80,7 +77,6 @@ class MyBaseSettings(BaseSettings, cli_exit_on_error=False):
    model_config = SettingsConfigDict(extra='allow', populate_by_name=True, 
                                      cli_parse_args=check_for_cli_parsing(), cli_exit_on_error=False)
    
-
 class MyBaseModel(BaseModel):
    # This allows there to be extra fields
   # model_config = ConfigDict(extra='allow', populate_by_name=True)
@@ -252,39 +248,6 @@ def load_data_type_map(tablename, engine):
     
     return columns, dtypes
 
-def read_sql_to_df(connection, table_name, clause: str = '', chunksize: int = 5000, metadata: MetaData = None):
-    
-    columns = metadata.tables.get(table_name).columns
-
-    dtypes = {col.name: sql_to_pandas_typemap.get(str(col.type).split('(')[0].upper(), 'object') 
-              for col in columns}
-    
-    where = f"WHERE {clause}" if clause else ''
-    where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
-    query = f"SELECT * FROM {table_name} {where}"
-    logger.debug(f"Query: {query}")
-    
-    df_iter = pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize)
-    not_empty = True
-    while not_empty:
-        start_time = time.time()
-        try:
-            df = next(df_iter)
-            load_time = time.time() - start_time
-            logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds at {df.shape[0]/load_time} per sec")
-            yield df
-        except StopIteration as stop:
-            break
-
-    # for df, time.time() in pd.read_sql(query, connection, dtype=dtypes, chunksize=chunksize):
-    #     load_time = time.time() -start_time
-    #     logger.info(f"Loaded {df.shape[0]} rows in {load_time:.2f} seconds")
-    #     for col in columns:
-    #         if str(col.type).upper().startswith(('DATE', 'TIMESTAMP')):
-    #             df[col.name] = pd.to_datetime(df[col.name])
-        
-    #     yield df
-
 def split_sql(tablename, min_id, max_id, partition_size, row_count, clause):
         """ Generate SQL SELECT statements of equal partitions of records function
         """
@@ -347,7 +310,7 @@ def generate_select_queries(min_id: int, max_id: int, partition_size:int, tablen
                  " AND id < " + str(query_max_id)
         
         if clause:
-            query = " AND " + clause
+            query += " AND " + clause
         
         queries_obj.append(query, {"table": tablename, "min_id": query_min_id, "max_id": query_max_id})
         
@@ -392,15 +355,6 @@ class IcebergJobStep(Base):
     src_max_id = Column(BigInteger)
     src_timestamp = Column(DateTime)
 
-def create_iceberg_catalog_tables(target_iceberg):
-
-    engine = create_engine(target_iceberg.uri)
-    try:
-        logger.info("Creating iceberg catalog tables")
-        SqlCatalogBaseTable.metadata.create_all(engine)
-    except Exception:
-        logger.error("Error Creating iceberg catalog tables")
-
 class LogEntry(Base):
     __tablename__ = "log_entries"
 
@@ -413,9 +367,17 @@ class LogEntry(Base):
     function_name = Column(String(500))
     line = Column(Integer)
 
-from sqlalchemy.orm import sessionmaker
-from contextvars import ContextVar
 
+def create_iceberg_catalog_tables(target_iceberg):
+
+    engine = create_engine(target_iceberg.uri)
+    try:
+        logger.info("Creating iceberg catalog tables if they do not exist")
+        SqlCatalogBaseTable.metadata.create_all(engine)
+    except Exception:
+        logger.error("Error Creating iceberg catalog tables")
+
+from contextvars import ContextVar
 current_job_id = ContextVar('current_job_id', default=None)
 
 class SQLAlchemyLogHandler:
@@ -433,16 +395,17 @@ class SQLAlchemyLogHandler:
             function_name=record["function"],
             line=record["line"]
         )
+        
         with self.Session() as session:
             session.add(log_entry)
             session.commit()
 
 # Global logger instance
 logger.remove()  # Remove default handler
-logger.add(sys.stderr, level="DEBUG")  # Add console handler
+logger.add(sys.stderr, level="INFO")  # Add console handler
 
 
-def initialize_logger(engine, min_db_level="DEBUG"):
+def initialize_logger(engine, min_db_level="INFO"):
     # Create the log_entries table
     Base.metadata.create_all(engine)
     
