@@ -12,6 +12,7 @@ base = {
     "sql_clause": "id < 300001",
     "table_name": "FS.AccountPosition2",
     "partition_field": "ID",
+    "grid_type": "tabulator",
     "servers": [
         {
             "name": "LocalTesting",

@@ -27,6 +27,8 @@ def purge_table(config: Configuration):
     ice = create_IRISIceberg(config)
     try:
         ice.iceberg.catalog.purge_table(tablename)
+        logger.info(f"Purged {tablename}")
+        
     except pyiceberg.exceptions.NoSuchTableError as ex:
         logger.error(f"Cannot purge table {tablename}:  {ex}")
         #logger.error(f"Cannot purge table {tablename} because it does not exist")

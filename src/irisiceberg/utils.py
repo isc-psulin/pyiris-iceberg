@@ -22,6 +22,9 @@ from sqlalchemy.orm import declarative_base
 import logging
 from datetime import datetime
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 # Create a Base class for declarative models
 Base = declarative_base()
 
@@ -64,7 +67,7 @@ class IterableWrapper(Iterable):
 
 def check_for_cli_parsing():
         cli_apps = ['pytest', 'uvicorn', 'jupyter', 'ipykernel']
-        logger.info(f"SYS>ARGV - {sys.argv[0].lower()}")
+        logger.trace(f"SYS>ARGV - {sys.argv[0].lower()}")
         for cli_app in cli_apps:
             if cli_app in sys.argv[0].lower():
                 return False

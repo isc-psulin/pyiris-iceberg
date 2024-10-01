@@ -170,7 +170,6 @@ class IcebergIRIS:
             arrow_data = pa.Table.from_pandas(iris_data)
             
             skip_write = True if self.config.skip_write == True else False
-            print(skip_write, self.config.skip_write )
             if not skip_write:
                
                 # Write the data to the iceberg table
@@ -243,8 +242,8 @@ class IcebergIRIS:
         #session.refresh(job)
          
         # Create table, deleting if it exists
-        iceberg_table = self.create_iceberg_table(self.config.target_table_name)
-        logger.info(f"Created table {self.config.target_table_name}")
+        # iceberg_table = self.create_iceberg_table(self.config.target_table_name)
+        # logger.info(f"Created table {self.config.target_table_name}")
 
 
         self.update_iceberg_table(job=job, session=session)
@@ -281,7 +280,6 @@ class IcebergIRIS:
             self.iris.load_metadata()
 
         schema = self.create_table_schema(tablename)   
-        print(f"Iceberg schema {schema}")
         logger.info(f"Iceberg schema {schema}")
 
         # Create the namespace
@@ -293,7 +291,6 @@ class IcebergIRIS:
         location = self.iceberg.catalog.properties.get("location")
 
         #partition_spec = pyiceberg.partitioning.PartitionSpec(pyiceberg.partitioning.PartitionField(name='ID'))
-        print(schema)
         if location:
             logger.debug(f"TABLENAME _ {tablename}")
             table = self.iceberg.catalog.create_table(identifier=tablename,schema=schema, 
