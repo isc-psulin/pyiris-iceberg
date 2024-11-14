@@ -3,6 +3,7 @@ import sys
 import json 
 from collections import defaultdict
 import importlib.util
+import traceback
 
 from loguru import logger
 import pyiceberg
@@ -59,17 +60,22 @@ def show_table_data_schema(config: Configuration):
 
 def list_tables(config: Configuration):
 
-    ice = create_IRISIceberg(config)
+    try:
+        ice = create_IRISIceberg(config)
 
-    namespaces = ice.iceberg.catalog.list_namespaces()
+        namespaces = ice.iceberg.catalog.list_namespaces()
 
-    tables = defaultdict(list)
-    for ns in namespaces:
-        tables[ns] = ice.iceberg.catalog.list_tables(ns) 
-    
-    logger.info(f"Found {len(tables.items())} tables")
-    for ns, tablename in tables.items():
-        logger.info(f"{tablename}")
+        tables = defaultdict(list)
+        for ns in namespaces:
+            tables[ns] = ice.iceberg.catalog.list_tables(ns) 
+        
+        logger.info(f"Found {len(tables.items())} tables")
+        for ns, tablename in tables.items():
+            logger.info(f"{tablename}")
+
+    except Exception as ex:
+        traceback.print_exc()
+        raise ex
 
 def update_table(config: Configuration):
 
