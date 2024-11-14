@@ -74,7 +74,8 @@ def list_tables(config: Configuration):
             logger.info(f"{tablename}")
 
     except Exception as ex:
-        traceback.print_exc()
+        print("Handling exception in list tables")
+        print(traceback.print_exc())
         raise ex
 
 def update_table(config: Configuration):
