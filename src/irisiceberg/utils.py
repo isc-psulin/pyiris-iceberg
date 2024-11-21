@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from typing import Iterable, Optional, List
 
-from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, ForeignKey
+from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
 from pyiceberg.catalog.sql import IcebergNamespaceProperties, IcebergTables, SqlCatalogBaseTable
@@ -141,7 +141,7 @@ def get_alchemy_engine(config: Configuration, server_name: str = None):
     #connection_url = create_connection_url(server)
     connection_url = get_generic_connection_url(server)
     start = time.time()
-    engine = create_engine(connection_url,  pool_size=1)
+    engine = create_engine(connection_url,   poolclass=NullPool)
     engine.connect()
     logger.debug(f"Creating connection took {time.time()-start} secs")
     return engine

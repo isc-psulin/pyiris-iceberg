@@ -197,13 +197,19 @@ class IcebergIRIS:
             logger.error(f"Cannot load table, exiting")
             sys.exit(1)
 
+        print(f"iceberg_table: {iceberg_table}")
         row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
+
+        print(f"row_count: {row_count}")
         if job_id is None:
             job_id = self.create_job(row_count, min_id, max_id)
+
+        print(f"jobid {job_id}")
 
         if not self.iris.metadata:
             self.iris.load_metadata()
         
+        print("Loadied metadata")
         # Set the current job ID for logging
         utils.current_job_id.set(job_id)
 
