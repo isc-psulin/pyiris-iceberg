@@ -21,6 +21,7 @@ from irisiceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobS
 from datetime import datetime
 from sqlalchemy.orm import sessionmaker, Session
 import logging 
+import traceback 
 
 import iris
 
@@ -73,11 +74,14 @@ class IRIS:
 
     def get_table_stats(self, tablename, clause):
         
-        partition_fld = self.config.partition_field
-        where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
-        sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} {where}"
-        df = pd.read_sql(sql, self.connect())
-        return int(df['row_count'][0]), int(df['min_val'][0]), int(df['max_val'][0])
+        try:
+            partition_fld = self.config.partition_field
+            where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
+            sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} {where}"
+            df = pd.read_sql(sql, self.connect())
+            return int(df['row_count'][0]), int(df['min_val'][0]), int(df['max_val'][0])
+        except:
+            traceback.print_exc()
         
 class Iceberg():
     def __init__(self, config: Configuration):
