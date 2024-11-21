@@ -20,6 +20,8 @@ from sqlalchemy.orm import declarative_base
 import logging
 from datetime import datetime
 
+import iris 
+
 # Create a Base class for declarative models
 Base = declarative_base()
 

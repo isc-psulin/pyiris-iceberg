@@ -60,6 +60,7 @@ def show_table_data_schema(config: Configuration):
 
 def list_tables(config: Configuration):
 
+    tables = []
     try:
         ice = create_IRISIceberg(config)
 
@@ -72,11 +73,13 @@ def list_tables(config: Configuration):
         logger.info(f"Found {len(tables.items())} tables")
         for ns, tablename in tables.items():
             logger.info(f"{tablename}")
+            tables.append(f"{ns}.{tablename}")
 
     except Exception as ex:
-        print("Handling exception in list tables")
-        print(traceback.print_exc())
+        traceback.print_exc()
         raise ex
+    
+    return tables
 
 def update_table(config: Configuration):
 

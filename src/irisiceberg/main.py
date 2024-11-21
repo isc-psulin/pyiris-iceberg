@@ -22,6 +22,8 @@ from datetime import datetime
 from sqlalchemy.orm import sessionmaker, Session
 import logging 
 
+import iris
+
 class IRIS:
 
     def __init__(self, config: Configuration):
@@ -83,7 +85,7 @@ class Iceberg():
         #self.iris = iris
 
         self.target_iceberg =  get_from_list(self.config.icebergs, self.config.target_iceberg) 
-
+        
         # The configuration has to match the expected fields for it's particular type
         self.catalog = SqlCatalog(**dict(self.target_iceberg))        
     
