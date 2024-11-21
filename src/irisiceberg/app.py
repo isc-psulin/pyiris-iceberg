@@ -20,6 +20,7 @@ def create_IRISIceberg(config: Configuration):
 
     ice = IcebergIRIS("test", config)
     ice.iris.create_engine()
+    
     return ice 
 
 def purge_table(config: Configuration):

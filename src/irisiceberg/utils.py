@@ -141,7 +141,7 @@ def get_alchemy_engine(config: Configuration, server_name: str = None):
     #connection_url = create_connection_url(server)
     connection_url = get_generic_connection_url(server)
     start = time.time()
-    engine = create_engine(connection_url)
+    engine = create_engine(connection_url,  pool_size=1)
     engine.connect()
     logger.debug(f"Creating connection took {time.time()-start} secs")
     return engine
