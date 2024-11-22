@@ -191,64 +191,69 @@ class IcebergIRIS:
 
     def update_iceberg_table(self, job_id: int = None):
         
-        iceberg_table = self.iceberg.load_table(self.config.target_table_name)
-        if iceberg_table is None:
-            logger.error(f"Cannot load table, exiting")
-            sys.exit(1)
+        try:
+            iceberg_table = self.iceberg.load_table(self.config.target_table_name)
+            if iceberg_table is None:
+                logger.error(f"Cannot load table, exiting")
+                sys.exit(1)
 
-        print(f"iceberg_table: {iceberg_table}")
-        row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
+            print(f"iceberg_table: {iceberg_table}")
+            row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
 
-        print(f"row_count: {row_count}")
-        if job_id is None:
-            job_id = self.create_job(row_count, min_id, max_id)
+            print(f"row_count: {row_count}")
+            if job_id is None:
+                job_id = self.create_job(row_count, min_id, max_id)
 
-        print(f"jobid {job_id}")
+            print(f"jobid {job_id}")
 
-        if not self.iris.metadata:
-            self.iris.load_metadata()
-        
-        print("Loadied metadata")
-        # Set the current job ID for logging
-        utils.current_job_id.set(job_id)
-
-        
-        for iris_data in self.read_sql_to_df(self.config.source_table_name, min_id, max_id, row_count):
-            step_start_time = datetime.now()
-
-            # Downcast timestamps in the DataFrame
-            iris_data = utils.downcast_timestamps(iris_data)
-            arrow_data = pa.Table.from_pandas(iris_data)
+            if not self.iris.metadata:
+                self.iris.load_metadata()
             
-            skip_write = True if self.config.skip_write == True else False
+            print("Loadied metadata")
+            # Set the current job ID for logging
+            utils.current_job_id.set(job_id)
 
-            if not skip_write:
-                start_time = time.time()
-                iceberg_table.append(arrow_data)
-                load_time = time.time() - start_time
-                logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time} per sec")
-            else:
-                logger.info(f"Skipping write to iceberg table {self.config.target_table_name}")
+            
+            for iris_data in self.read_sql_to_df(self.config.source_table_name, min_id, max_id, row_count):
+                step_start_time = datetime.now()
+
+                # Downcast timestamps in the DataFrame
+                iris_data = utils.downcast_timestamps(iris_data)
+                arrow_data = pa.Table.from_pandas(iris_data)
                 
-            # Record job step
-            minval = 0 if pd.isna(iris_data[self.config.partition_field].min()) else iris_data[self.config.partition_field].min()
-            maxval = 0 if pd.isna(iris_data[self.config.partition_field].max()) else iris_data[self.config.partition_field].max()
-            self.create_job_step(job_id, step_start_time, minval, maxval)
+                skip_write = True if self.config.skip_write == True else False
 
-            del iris_data, arrow_data
-            gc.collect()
+                if not skip_write:
+                    start_time = time.time()
+                    iceberg_table.append(arrow_data)
+                    load_time = time.time() - start_time
+                    logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time} per sec")
+                else:
+                    logger.info(f"Skipping write to iceberg table {self.config.target_table_name}")
+                    
+                # Record job step
+                minval = 0 if pd.isna(iris_data[self.config.partition_field].min()) else iris_data[self.config.partition_field].min()
+                maxval = 0 if pd.isna(iris_data[self.config.partition_field].max()) else iris_data[self.config.partition_field].max()
+                self.create_job_step(job_id, step_start_time, minval, maxval)
+
+                del iris_data, arrow_data
+                gc.collect()
+                
+            # Update the main job record with the end time
+            with self.session() as session:
+                job = IcebergJob(id=job_id)
+                job.end_time = datetime.now()
+                session.commit()
+                session.close()
             
-        # Update the main job record with the end time
-        with self.session() as session:
-            job = IcebergJob(id=job_id)
-            job.end_time = datetime.now()
-            session.commit()
-            session.close()
-        
-        # Reset the current job ID
-        utils.current_job_id.set(None)
+            # Reset the current job ID
+            utils.current_job_id.set(None)
 
-        logger.info(f"Completed updating and recording job summaries for {self.config.target_table_name}")
+            logger.info(f"Completed updating and recording job summaries for {self.config.target_table_name}")
+        except Exception as ex:
+            traceback.print_exc()
+            raise(ex)
+
 
     def initial_table_sync(self):
         """ This function creates all the required tables and does an initial load of data.
