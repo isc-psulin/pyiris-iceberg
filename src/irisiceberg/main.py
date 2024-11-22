@@ -74,7 +74,9 @@ class IRIS:
             partition_fld = self.config.partition_field
             where = f"WHERE {clause}" if clause and not clause.lower().startswith("order") else ""
             sql = f"SELECT Count(*) row_count, Min({partition_fld}) min_val, Max({partition_fld}) max_val from {tablename} {where}"
+            logger.debug(f"SQL in get_table_stats: {sql}")
             df = pd.read_sql(sql, self.connect())
+            logger.debug(df.head())
             return int(df['row_count'][0]), int(df['min_val'][0]), int(df['max_val'][0])
         except:
             traceback.print_exc()
@@ -209,10 +211,9 @@ class IcebergIRIS:
             if not self.iris.metadata:
                 self.iris.load_metadata()
             
-            print("Loadied metadata")
+            print("Loaded metadata")
             # Set the current job ID for logging
             utils.current_job_id.set(job_id)
-
             
             for iris_data in self.read_sql_to_df(self.config.source_table_name, min_id, max_id, row_count):
                 step_start_time = datetime.now()
