@@ -3,15 +3,14 @@ import time
 import sys
 
 from pydantic import BaseModel
-from pydantic import ConfigDict
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from typing import Iterable, Optional, List
 
-from sqlalchemy import MetaData, create_engine, Table, Column, Integer, String, Float, inspect, DateTime, BigInteger, NullPool
+from sqlalchemy import create_engine, Table, Column, Integer, String, inspect, DateTime, BigInteger, NullPool
 from sqlalchemy.ext.declarative import declarative_base
 from pyiceberg.schema import Schema
-from pyiceberg.catalog.sql import IcebergNamespaceProperties, IcebergTables, SqlCatalogBaseTable
+from pyiceberg.catalog.sql import SqlCatalogBaseTable
 from pyiceberg.types import NestedField
 from sqlalchemy.orm import sessionmaker
 import pandas as pd
@@ -378,7 +377,6 @@ def create_iceberg_catalog_tables(target_iceberg):
 
 
 from contextvars import ContextVar
-
 current_job_id = ContextVar('current_job_id', default=None)
 
 
@@ -404,7 +402,8 @@ class SQLAlchemyLogHandler:
 
 # Global logger instance
 logger.remove()  # Remove default handler
-logger.add(sys.stderr, level="INFO")  # Add console handler
+#logger.add(sys.stderr, level="INFO")  # Add console handler
+logger.add(sys.stdout, level="DEBUG")  # Add console handler
 
 
 def initialize_logger(engine, min_db_level="INFO"):

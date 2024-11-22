@@ -1,7 +1,8 @@
 import sys
 import time 
 import gc
-
+from datetime import datetime
+import traceback 
 
 # Third party
 import pyiceberg.partitioning
@@ -10,20 +11,15 @@ import pyiceberg
 import pandas as pd
 import pyarrow as pa
 from pyiceberg.catalog.sql import  SqlCatalog
-from sqlalchemy import  MetaData, Engine
+from sqlalchemy import  MetaData
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker, Session
 
 # Local package
 import irisiceberg.utils as utils
 from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap, initialize_logger
 from irisiceberg.utils import create_iceberg_catalog_tables, logger
 from irisiceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
-from datetime import datetime
-from sqlalchemy.orm import sessionmaker, Session
-import logging 
-import traceback 
-
-import iris
 
 class IRIS:
 
@@ -86,7 +82,6 @@ class IRIS:
 class Iceberg():
     def __init__(self, config: Configuration):
         self.config = config
-        #self.iris = iris
 
         self.target_iceberg =  get_from_list(self.config.icebergs, self.config.target_iceberg) 
         
@@ -336,5 +331,3 @@ class IcebergIRIS:
          table = self.iris.metadata.tables[tablename]
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema
-
-

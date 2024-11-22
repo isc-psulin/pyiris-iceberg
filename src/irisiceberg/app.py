@@ -5,7 +5,6 @@ from collections import defaultdict
 import importlib.util
 import traceback
 
-from loguru import logger
 import pyiceberg
 from dotenv import load_dotenv
 
