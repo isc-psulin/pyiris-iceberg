@@ -293,7 +293,7 @@ def generate_select_queries(min_id: int, max_id: int, partition_size:int, tablen
     
     # When the query min id is > than the max_id, then all partitions are complete
     while query_min_id < max_id:  
-        query = "SELECT ID, "
+        query = "SELECT "
         if not fields:
             query += " * "
         else:
