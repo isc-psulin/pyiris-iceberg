@@ -8,7 +8,7 @@ import traceback
 import pyiceberg
 from dotenv import load_dotenv
 
-from irisiceberg.main import IcebergIRIS
+from irisiceberg.main import IcebergIRIS, Iceberg
 from irisiceberg.utils import Configuration, logger
 
 load_dotenv(verbose=True)
@@ -62,8 +62,7 @@ def list_tables(config: Configuration):
 
     tables = []
     try:
-        ice = create_IRISIceberg(config)
-
+        ice = Iceberg(config)
         namespaces = ice.iceberg.catalog.list_namespaces()
 
         tables_with_ns = defaultdict(list)
