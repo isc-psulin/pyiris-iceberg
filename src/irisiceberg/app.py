@@ -63,8 +63,8 @@ def list_tables(config: Configuration):
     tables = []
     try:
         ice = Iceberg(config)
-        namespaces = ice.iceberg.catalog.list_namespaces()
-
+        namespaces = ice.catalog.list_namespaces()
+        
         tables_with_ns = defaultdict(list)
         for ns in namespaces:
             tables_with_ns[ns] = ice.iceberg.catalog.list_tables(ns) 
