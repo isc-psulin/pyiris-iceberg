@@ -66,12 +66,11 @@ def list_tables(config: Configuration):
 
         namespaces = ice.iceberg.catalog.list_namespaces()
 
-        tables = defaultdict(list)
+        tables_with_ns = defaultdict(list)
         for ns in namespaces:
-            tables[ns] = ice.iceberg.catalog.list_tables(ns) 
+            tables_with_ns[ns] = ice.iceberg.catalog.list_tables(ns) 
         
-        logger.info(f"Found {len(tables.items())} tables")
-        for ns, tablename in tables.items():
+        for ns, tablename in tables_with_ns.items():
             logger.info(f"{tablename}")
             tables.append(f"{ns}.{tablename}")
 
