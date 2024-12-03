@@ -11,6 +11,7 @@ from irisiceberg.app import load_config
 import pandas as pd
 from pydantic import BaseModel
 from pyiceberg.catalog import load_catalog
+from pathlib import Path
 
 app = FastAPI()
 templates = Jinja2Templates("templates")
@@ -131,24 +132,28 @@ async def execute_iceberg_query(query_request: IcebergQueryRequest):
         return JSONResponse(content={"error": "Table not found"}, status_code=404)
     # except Exception as e:
     #     return JSONResponse(content={"error": str(e)}, status_code=400)
+
+
+#if __name__ == "__main__":
     
+# need to use --config_string so pydantic doesn't throw unrecognized arg
+if len(sys.argv) > 2:
+    if sys.argv[1] != '--config_string':
+        raise Exception("Only --config_string arg accepted")
+    config_file_path = sys.argv[2]
+    app.config = load_config(config_file_path)
+else:
+    app.config = load_config()
+
+app.engine = get_alchemy_engine(app.config)
+app.Session = sessionmaker(bind=app.engine)
+
+app.target_iceberg = get_from_list(app.config.icebergs, app.config.target_iceberg)
+app.iceberg_catalog = load_catalog(**app.target_iceberg.model_dump())
+
+import uvicorn
+# uvicorn.run('api:app', host="0.0.0.0", port=8002, reload=True)
 if __name__ == "__main__":
-    
-    # need to use --config_string so pydantic doesn't throw unrecognized arg
-    if len(sys.argv) > 2:
-        if sys.argv[1] != '--config_string':
-            raise Exception("Only --config_string arg accepted")
-        config_file_path = sys.argv[2]
-        app.config = load_config(config_file_path)
-    else:
-        app.config = load_config()
-
-    app.engine = get_alchemy_engine(app.config)
-    app.Session = sessionmaker(bind=app.engine)
-
-    app.target_iceberg = get_from_list(app.config.icebergs, app.config.target_iceberg)
-    app.iceberg_catalog = load_catalog(**app.target_iceberg.model_dump())
-
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
-    
+    config = uvicorn.Config("api:app", port=8002, log_level="info")
+    server = uvicorn.Server(config)
+    server.run()   
