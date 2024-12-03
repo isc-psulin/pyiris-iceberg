@@ -86,6 +86,10 @@ async def search_table(table_name: str, q: str = Query(None), job_id: int = Quer
 async def dataview(request: Request):
     return templates.TemplateResponse("dataview.html", {"request": request, "grid_type": app.config.grid_type})
 
+@app.get("/config", response_class=HTMLResponse)
+async def config(request: Request):
+    return templates.TemplateResponse("config.html", {"request": request})
+
 
 @app.post("/execute_query")
 async def execute_query(query_request: QueryRequest):

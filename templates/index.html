@@ -44,7 +44,8 @@
 <body>
     <div class="header-bar">
         <a href="/">IRIS Iceberg Logs</a>
-        <a href="/dataview"> Table View</a>
+        <a href="/dataview">Table View</a>
+        <a href="/config">Configuration</a>
     </div>
     {% for table in tables %}
         <h2>{{ table.name }}</h2>
@@ -131,81 +132,5 @@
         {% endfor %}
     </script>
 
-    <div class="config-container">
-        <h2>Configuration Editor</h2>
-        <div id="jsoneditor"></div>
-        <div class="config-buttons">
-            <button id="save-config">Save Configuration</button>
-            <button id="reset-config">Reset Changes</button>
-        </div>
-    </div>
-
-    <script>
-        // Initialize the JSON editor
-        const container = document.getElementById("jsoneditor");
-        const editor = new JSONEditor(container, {
-            mode: 'tree',
-            modes: ['tree', 'code', 'form', 'text', 'view'],
-            onError: function(err) {
-                alert(err.toString());
-            },
-            onModeChange: function(newMode, oldMode) {
-                console.log('Mode switched from', oldMode, 'to', newMode);
-            }
-        });
-
-        // Load initial configuration
-        fetch('/get_config')
-            .then(response => response.json())
-            .then(config => {
-                editor.set(config);
-            })
-            .catch(error => {
-                console.error('Error loading configuration:', error);
-                alert('Failed to load configuration');
-            });
-
-        // Save configuration
-        document.getElementById('save-config').addEventListener('click', function() {
-            try {
-                const updatedConfig = editor.get();
-                fetch('/update_config', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(updatedConfig)
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Configuration update failed');
-                    }
-                    return response.json();
-                })
-                .then(result => {
-                    alert('Configuration saved successfully');
-                })
-                .catch(error => {
-                    console.error('Error saving configuration:', error);
-                    alert('Failed to save configuration: ' + error.message);
-                });
-            } catch (e) {
-                alert('Invalid JSON: ' + e.message);
-            }
-        });
-
-        // Reset changes
-        document.getElementById('reset-config').addEventListener('click', function() {
-            fetch('/get_config')
-                .then(response => response.json())
-                .then(config => {
-                    editor.set(config);
-                })
-                .catch(error => {
-                    console.error('Error resetting configuration:', error);
-                    alert('Failed to reset configuration');
-                });
-        });
-    </script>
 </body>
 </html>
