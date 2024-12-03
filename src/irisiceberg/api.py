@@ -13,20 +13,14 @@ from pydantic import BaseModel
 from pyiceberg.catalog import load_catalog
 
 app = FastAPI()
-templates = Jinja2Templates(directory="/Users/psulin/projects/irisiceberg/templates")
+templates = Jinja2Templates("templates")
 
 # Load configuration
-# sys.path.append("/Users/psulin/projects/irisiceberg/configs")
-# import testing_configs
-print(sys.argv)
-# config = getattr(testing_configs, 'iris_src_local_target')
-config = load_config()
-# print(f"CONFIG - {config}")
-engine = get_alchemy_engine(config)
-Session = sessionmaker(bind=engine)
+# config = load_config()
+# engine = get_alchemy_engine(config)
+# Session = sessionmaker(bind=engine)
 
 exclude_tables = []
-grid_type = config.grid_type
 
 class QueryRequest(BaseModel):
     query: str
@@ -34,14 +28,11 @@ class QueryRequest(BaseModel):
 class IcebergQueryRequest(BaseModel):
     table_name: str
 
-# Load Iceberg catalog
-target_iceberg = get_from_list(config.icebergs, config.target_iceberg)
-iceberg_catalog = load_catalog(**target_iceberg.model_dump())
-
+ 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
     tables = []
-    inspector = inspect(engine)
+    inspector = inspect(app.engine)
     for table_name in inspector.get_table_names():
         if table_name in Base.metadata.tables:
             if table_name not in exclude_tables:
@@ -51,19 +42,19 @@ async def root(request: Request):
                     "columns": [column['name'] for column in inspector.get_columns(table_name)]
                 })
 
-    return templates.TemplateResponse("index.html", {"request": request, "tables": tables, "grid_type": grid_type})
+    return templates.TemplateResponse("index.html", {"request": request, "tables": tables, "grid_type": app.config.grid_type})
 
 @app.get("/search/{table_name}")
 async def search_table(table_name: str, q: str = Query(None), job_id: int = Query(None), limit: int = Query(500, ge=1, le=1000)):
     if table_name not in Base.metadata.tables:
         return JSONResponse(content={"error": "Table not found"}, status_code=404)
 
-    with Session() as session:
+    with app.Session() as session:
         conditions = []
         params = {"limit": limit}
 
         if q:
-            conditions.extend([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(engine).get_columns(table_name)])
+            conditions.extend([f"LOWER(CAST({col['name']} AS VARCHAR)) LIKE :search" for col in inspect(app.engine).get_columns(table_name)])
             params["search"] = f"%{q.lower()}%"
 
         if job_id and table_name in ['iceberg_job_step', 'log_entries']:
@@ -91,17 +82,13 @@ async def search_table(table_name: str, q: str = Query(None), job_id: int = Quer
 
 @app.get("/dataview", response_class=HTMLResponse)
 async def dataview(request: Request):
-    return templates.TemplateResponse("dataview.html", {"request": request, "grid_type": grid_type})
-
-@app.get("/dataview2", response_class=HTMLResponse)
-async def dataview(request: Request):
-    return templates.TemplateResponse("dataview2.html", {"request": request, "grid_type": grid_type})
+    return templates.TemplateResponse("dataview.html", {"request": request, "grid_type": app.config.grid_type})
 
 
 @app.post("/execute_query")
 async def execute_query(query_request: QueryRequest):
     try:
-        with Session() as session:
+        with app.Session() as session:
             result = session.execute(text(query_request.query))
             df = pd.DataFrame(result.fetchall(), columns=result.keys())
             
@@ -116,6 +103,7 @@ async def execute_query(query_request: QueryRequest):
                 "data": df.to_dict(orient="records")
             })
     except Exception as e:
+        print(e)
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
 @app.post("/execute_iceberg_query")
@@ -123,9 +111,9 @@ async def execute_iceberg_query(query_request: IcebergQueryRequest):
    # try:
 
     print(f"execute_iceberg_query - {query_request}")
-    print(iceberg_catalog)
+    print(app.iceberg_catalog)
     
-    table = iceberg_catalog.load_table(query_request.table_name)
+    table = app.iceberg_catalog.load_table(query_request.table_name)
     print(table)
     if table:
         df = table.scan(limit=1000).to_pandas()
@@ -145,6 +133,22 @@ async def execute_iceberg_query(query_request: IcebergQueryRequest):
     #     return JSONResponse(content={"error": str(e)}, status_code=400)
     
 if __name__ == "__main__":
+    
+    # need to use --config_string so pydantic doesn't throw unrecognized arg
+    if len(sys.argv) > 2:
+        if sys.argv[1] != '--config_string':
+            raise Exception("Only --config_string arg accepted")
+        config_file_path = sys.argv[2]
+        app.config = load_config(config_file_path)
+    else:
+        app.config = load_config()
+
+    app.engine = get_alchemy_engine(app.config)
+    app.Session = sessionmaker(bind=app.engine)
+
+    app.target_iceberg = get_from_list(app.config.icebergs, app.config.target_iceberg)
+    app.iceberg_catalog = load_catalog(**app.target_iceberg.model_dump())
+
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
     
