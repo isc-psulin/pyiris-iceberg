@@ -13,7 +13,7 @@ from irisiceberg.utils import Configuration, logger
 
 load_dotenv(verbose=True)
 CONFIG_PATH = os.getenv("IRISICE_CONFIG_PATH")
-print(CONFIG_PATH)
+print(f"CONFIG_PATH {CONFIG_PATH}")
 
 def create_IRISIceberg(config: Configuration):
 
