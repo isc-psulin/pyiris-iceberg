@@ -2,6 +2,7 @@ import sys
 
 from fastapi import FastAPI, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
@@ -110,6 +111,31 @@ async def execute_query(query_request: QueryRequest):
 @app.post("/execute_iceberg_query")
 async def execute_iceberg_query(query_request: IcebergQueryRequest):
    # try:
+
+@app.get("/get_config")
+async def get_config():
+    """Return the current configuration as JSON"""
+    return JSONResponse(content=jsonable_encoder(app.config))
+
+@app.post("/update_config")
+async def update_config(updated_config: dict):
+    """Update the application configuration"""
+    try:
+        # Create new config instance from updated data
+        new_config = MyBaseSettings(**updated_config)
+        # Update app config
+        app.config = new_config
+        # Update dependent services
+        app.engine = get_alchemy_engine(app.config)
+        app.Session = sessionmaker(bind=app.engine)
+        app.target_iceberg = get_from_list(app.config.icebergs, app.config.target_iceberg)
+        app.iceberg_catalog = load_catalog(**app.target_iceberg.model_dump())
+        return JSONResponse(content={"status": "success"})
+    except Exception as e:
+        return JSONResponse(
+            content={"status": "error", "message": str(e)},
+            status_code=400
+        )
 
     print(f"execute_iceberg_query - {query_request}")
     print(app.iceberg_catalog)
