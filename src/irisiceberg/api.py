@@ -111,6 +111,7 @@ async def execute_query(query_request: QueryRequest):
 @app.post("/execute_iceberg_query")
 async def execute_iceberg_query(query_request: IcebergQueryRequest):
    # try:
+   pass
 
 @app.get("/get_config")
 async def get_config():
