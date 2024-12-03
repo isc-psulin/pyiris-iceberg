@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Tables</title>
+    <link href="https://unpkg.com/tabulator-tables@5.1.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.1.1/jsoneditor.min.css" rel="stylesheet" type="text/css">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.1.1/jsoneditor.min.js"></script>
+
+    <style>
+        #jsoneditor {
+            width: 100%;
+            height: 500px;
+            margin-bottom: 20px;
+        }
+        .config-container {
+            padding: 20px;
+            background-color: #f8f9fa;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .config-buttons {
+            margin-top: 10px;
+        }
+        .search-input {
+            margin-bottom: 10px;
+            padding: 5px;
+            width: 300px;
+        }
+        .header-bar {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .header-bar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <a href="/">IRIS Iceberg Logs</a>
+        <a href="/dataview">Table View</a>
+        <a href="/config">Configuration</a>
+    </div>
+    {% for table in tables %}
+        <h2>{{ table.name }}</h2>
+        <input type="text" id="{{ table.name }}-search" class="search-input" placeholder="Search {{ table.name }}...">
+        <button id="{{ table.name }}-search-btn" class="search-button">Search</button>
+        <button id="{{ table.name }}-reset-btn" class="reset-button">Reset</button>
+        <div id="{{ table.name }}-table"></div>
+    {% endfor %}
+
+    <!-- <script type="module">
+        //import { sayHello, PI } from './myModule.js';
+        import {SelectRangeModule} from 'https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js';
+
+         
+    </script> -->
+
+    <script>
+        var selectedJobId = null;
+
+        {% for table in tables %}
+            (function() {
+                var {{ table.name }}Table = new Tabulator("#{{ table.name }}-table", {
+                    height: 400,
+                    layout: "fitColumns",
+                    pagination: "local",
+                    paginationSize: 50,
+                    columns: [
+                        {% for column in table.columns %}
+                            {title: "{{ column }}", field: "{{ column }}", headerFilter:true },
+                        {% endfor %}
+                    ],
+                    {% if table.name == 'iceberg_job' %}
+                    selectable: 1,
+                    {% endif %}
+                });
+                
+                function performSearch{{ table.name }}(jobId = null) {
+                    var searchTerm = document.getElementById("{{ table.name }}-search").value;
+                    var url = `/search/{{ table.name }}?q=${searchTerm}`;
+                    if (jobId && {{ table.name }} !== 'iceberg_job') {
+                        url += `&job_id=${jobId}`;
+                    }
+                    console.log(`Performing search for {{ table.name }} with URL: ${url}`);
+                    fetch(url)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log(`Received data for {{ table.name }}:`, data);
+                            if (data.length === 0) {
+                                console.log(`No data returned for {{ table.name }}`);
+                            }
+                            {{ table.name }}Table.setData(data);
+                        })
+                        .catch(error => {
+                            console.error(`Error fetching data for {{ table.name }}:`, error);
+                            alert(`Error fetching data for {{ table.name }}: ${error.message}`);
+                        });
+                }
+
+                document.getElementById("{{ table.name }}-search-btn").addEventListener("click", function() {
+                    performSearch{{ table.name }}(selectedJobId);
+                });
+
+                document.getElementById("{{ table.name }}-search").addEventListener("keyup", function(event) {
+                    if (event.key === "Enter") {
+                        performSearch{{ table.name }}(selectedJobId);
+                    }
+                });
+
+                document.getElementById("{{ table.name }}-reset-btn").addEventListener("click", function() {
+                    document.getElementById("{{ table.name }}-search").value = "";
+                    selectedJobId = null;
+                    performSearch{{ table.name }}();
+                });
+
+                // Initial load
+                console.log("Performing initial load for {{ table.name }}");
+                performSearch{{ table.name }}();
+            })();
+        {% endfor %}
+    </script>
+
+</body>
+</html>
