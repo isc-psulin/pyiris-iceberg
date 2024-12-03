@@ -5,9 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Database Tables</title>
     <link href="https://unpkg.com/tabulator-tables@5.1.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.1.1/jsoneditor.min.css" rel="stylesheet" type="text/css">
     <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/10.1.1/jsoneditor.min.js"></script>
 
     <style>
+        #jsoneditor {
+            width: 100%;
+            height: 500px;
+            margin-bottom: 20px;
+        }
+        .config-container {
+            padding: 20px;
+            background-color: #f8f9fa;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        .config-buttons {
+            margin-top: 10px;
+        }
         .search-input {
             margin-bottom: 10px;
             padding: 5px;
@@ -113,6 +129,83 @@
                 performSearch{{ table.name }}();
             })();
         {% endfor %}
+    </script>
+
+    <div class="config-container">
+        <h2>Configuration Editor</h2>
+        <div id="jsoneditor"></div>
+        <div class="config-buttons">
+            <button id="save-config">Save Configuration</button>
+            <button id="reset-config">Reset Changes</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the JSON editor
+        const container = document.getElementById("jsoneditor");
+        const editor = new JSONEditor(container, {
+            mode: 'tree',
+            modes: ['tree', 'code', 'form', 'text', 'view'],
+            onError: function(err) {
+                alert(err.toString());
+            },
+            onModeChange: function(newMode, oldMode) {
+                console.log('Mode switched from', oldMode, 'to', newMode);
+            }
+        });
+
+        // Load initial configuration
+        fetch('/get_config')
+            .then(response => response.json())
+            .then(config => {
+                editor.set(config);
+            })
+            .catch(error => {
+                console.error('Error loading configuration:', error);
+                alert('Failed to load configuration');
+            });
+
+        // Save configuration
+        document.getElementById('save-config').addEventListener('click', function() {
+            try {
+                const updatedConfig = editor.get();
+                fetch('/update_config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updatedConfig)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Configuration update failed');
+                    }
+                    return response.json();
+                })
+                .then(result => {
+                    alert('Configuration saved successfully');
+                })
+                .catch(error => {
+                    console.error('Error saving configuration:', error);
+                    alert('Failed to save configuration: ' + error.message);
+                });
+            } catch (e) {
+                alert('Invalid JSON: ' + e.message);
+            }
+        });
+
+        // Reset changes
+        document.getElementById('reset-config').addEventListener('click', function() {
+            fetch('/get_config')
+                .then(response => response.json())
+                .then(config => {
+                    editor.set(config);
+                })
+                .catch(error => {
+                    console.error('Error resetting configuration:', error);
+                    alert('Failed to reset configuration');
+                });
+        });
     </script>
 </body>
 </html>
