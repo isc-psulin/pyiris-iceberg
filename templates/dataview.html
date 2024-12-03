@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dataview</title>
+    <link href="https://unpkg.com/tabulator-tables@5.1.0/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.1.0/dist/js/tabulator.min.js"></script>
+    {% if grid_type == "perspective" %}
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective/dist/umd/perspective.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer/dist/umd/perspective-viewer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer-datagrid/dist/umd/perspective-viewer-datagrid.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer-d3fc/dist/umd/perspective-viewer-d3fc.js"></script>
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer/dist/css/themes.css" /> -->
+    <link rel="stylesheet" crossorigin="anonymous" href="https://cdn.jsdelivr.net/npm/@finos/perspective-viewer/dist/css/pro.css"/>
+    
+    {% endif %}
+    <style>
+        .header-bar {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 20px;
+        }
+        .header-bar a {
+            margin-right: 15px;
+            text-decoration: none;
+            color: #007bff;
+        }
+        #query-textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        {% if grid_type == "perspective" %}
+        perspective-viewer {
+            height: 400px;
+            width: 100%;
+        }
+        {% endif %}
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <a href="/">Home</a>
+        <a href="/dataview">Dataview</a>
+    </div>
+    <h1>Dataview</h1>
+    <h2>SQL Query</h2>
+    <textarea id="query-textarea" placeholder="Enter your SQL query here..."></textarea>
+    <button id="submit-btn">Submit SQL Query</button>
+    
+    <h2>Iceberg Table Query</h2>
+    <textarea id="iceberg-query-textarea" placeholder="Enter your Iceberg table name here..."></textarea>
+    <button id="iceberg-submit-btn">Submit Iceberg Query</button>
+    
+    <div id="sql-result-table"></div>
+    <div id="iceberg-result-table"></div>
+
+    <script>
+        {% if grid_type == "tabulator" %}
+        var sqlResultTable = new Tabulator("#sql-result-table", {
+            height: 400,
+            layout: "fitColumns",
+            pagination: "local",
+            paginationSize: 1000,
+        });
+        var icebergResultTable = new Tabulator("#iceberg-result-table", {
+            height: 400,
+            layout: "fitColumns",
+            pagination: "local",
+            paginationSize: 1000,
+        });
+        {% elif grid_type == "perspective" %}
+        const worker = perspective.worker();
+        let sqlTable, icebergTable;
+        const sqlViewer = document.createElement("perspective-viewer");
+        const icebergViewer = document.createElement("perspective-viewer");
+        document.getElementById("sql-result-table").appendChild(sqlViewer);
+        document.getElementById("iceberg-result-table").appendChild(icebergViewer);
+        {% endif %}
+
+        async function executeQuery(endpoint, queryData, isIceberg) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(queryData),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    {% if grid_type == "tabulator" %}
+                    const targetTable = isIceberg ? icebergResultTable : sqlResultTable;
+                    targetTable.setColumns(data.columns.map(col => ({title: col, field: col})));
+                    targetTable.setData(data.data);
+                    {% elif grid_type == "perspective" %}
+                    const targetViewer = isIceberg ? icebergViewer : sqlViewer;
+                    let targetTable = isIceberg ? icebergTable : sqlTable;
+                    if (targetTable) {
+                        targetTable.replace(data.data);
+                    } else {
+                        targetTable = await worker.table(data.data);
+                        await targetViewer.load(targetTable);
+                        if (isIceberg) {
+                            icebergTable = targetTable;
+                        } else {
+                            sqlTable = targetTable;
+                        }
+                    }
+                    {% endif %}
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while executing the query: ' + error.message);
+            }
+        }
+
+        document.getElementById("submit-btn").addEventListener("click", function() {
+            var query = document.getElementById("query-textarea").value;
+            executeQuery('/execute_query', {query: query}, false);
+        });
+
+        document.getElementById("iceberg-submit-btn").addEventListener("click", function() {
+            var tableName = document.getElementById("iceberg-query-textarea").value;
+            console.log({table_name: tableName})
+            executeQuery('/execute_iceberg_query', {table_name: tableName}, true);
+        });
+    </script>
+</body>
+</html>
