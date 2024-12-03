@@ -73,6 +73,7 @@ def list_tables(config: Configuration):
             logger.info(f"{tablename}")
             tables.append(f"{ns}.{tablename}")
 
+        print(tables)
     except Exception as ex:
         traceback.print_exc()
         raise ex
