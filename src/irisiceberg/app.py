@@ -13,7 +13,6 @@ from irisiceberg.utils import Configuration, logger
 
 load_dotenv(verbose=True)
 CONFIG_PATH = os.getenv("IRISICE_CONFIG_PATH")
-print(f"CONFIG_PATH {CONFIG_PATH}")
 
 def create_IRISIceberg(config: Configuration):
 
@@ -95,10 +94,13 @@ def load_config_old():
     config = Configuration(**config_dict)
     return config 
 
-def load_config():
+def load_config(config_path: str = ""):
     
-    config = json.load(open(CONFIG_PATH))
-    logger.info(f"Loaded config from {CONFIG_PATH}")
+    if not config_path:
+        config_path = CONFIG_PATH
+
+    config = json.load(open(config_path))
+    logger.info(f"Loaded config from {config_path} : {config}")
     config = Configuration(**config)
     return config 
 

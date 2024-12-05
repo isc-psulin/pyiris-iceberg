@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
 from irisiceberg.utils import get_alchemy_engine, Base, get_from_list, MyBaseSettings
-from irisiceberg.app import load_config
+from irisiceberg.app import load_config, CONFIG_PATH
 import pandas as pd
 from pydantic import BaseModel
 from pyiceberg.catalog import load_catalog
@@ -44,7 +44,7 @@ async def root(request: Request):
                     "columns": [column['name'] for column in inspector.get_columns(table_name)]
                 })
 
-    return templates.TemplateResponse("index.html", {"request": request, "tables": tables, "grid_type": app.config.grid_type})
+    return templates.TemplateResponse("logs.html", {"request": request, "tables": tables, "grid_type": app.config.grid_type})
 
 @app.get("/search/{table_name}")
 async def search_table(table_name: str, q: str = Query(None), job_id: int = Query(None), limit: int = Query(500, ge=1, le=1000)):
@@ -90,7 +90,6 @@ async def dataview(request: Request):
 async def config(request: Request):
     return templates.TemplateResponse("config.html", {"request": request})
 
-
 @app.post("/execute_query")
 async def execute_query(query_request: QueryRequest):
     try:
@@ -112,10 +111,6 @@ async def execute_query(query_request: QueryRequest):
         print(e)
         return JSONResponse(content={"error": str(e)}, status_code=400)
 
-@app.post("/execute_iceberg_query")
-async def execute_iceberg_query(query_request: IcebergQueryRequest):
-   # try:
-   pass
 
 @app.get("/get_config")
 async def get_config():
@@ -142,6 +137,9 @@ async def update_config(updated_config: dict):
             status_code=400
         )
 
+@app.post("/execute_iceberg_query")
+async def execute_iceberg_query(query_request: IcebergQueryRequest):
+   # try:
     print(f"execute_iceberg_query - {query_request}")
     print(app.iceberg_catalog)
     
@@ -165,16 +163,16 @@ async def update_config(updated_config: dict):
     #     return JSONResponse(content={"error": str(e)}, status_code=400)
 
 
-#if __name__ == "__main__":
-    
 # need to use --config_string so pydantic doesn't throw unrecognized arg
 if len(sys.argv) > 2:
     if sys.argv[1] != '--config_string':
         raise Exception("Only --config_string arg accepted")
     config_file_path = sys.argv[2]
+    app.config_file_path = config_file_path
     app.config = load_config(config_file_path)
 else:
     app.config = load_config()
+    app.config_file_path = CONFIG_PATH
 
 app.engine = get_alchemy_engine(app.config)
 app.Session = sessionmaker(bind=app.engine)

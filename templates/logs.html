@@ -43,10 +43,12 @@
 </head>
 <body>
     <div class="header-bar">
-        <a href="/">IRIS Iceberg Logs</a>
-        <a href="/dataview">Table View</a>
-        <a href="/config">Configuration</a>
-    </div>
+        <div class="header-bar">
+            <a href="/config">Configuration</a>
+            <a href="/dataview">Table View</a>
+            <a href="/">Logs</a>
+        </div>
+
     {% for table in tables %}
         <h2>{{ table.name }}</h2>
         <input type="text" id="{{ table.name }}-search" class="search-input" placeholder="Search {{ table.name }}...">
