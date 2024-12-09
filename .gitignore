@@ -2,6 +2,7 @@
 **notes/
 
 **/**.ipynb 
+**/tmp** 
 
 **configs/**.json
 # Byte-compiled / optimized / DLL files

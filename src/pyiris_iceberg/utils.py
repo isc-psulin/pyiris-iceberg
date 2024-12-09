@@ -110,7 +110,7 @@ class Configuration(MyBaseSettings):
 
 
     # This is required to allow for passing in a string config so that it can be handled by the Pydantic parser
-    config_string: Optional[str] = None
+    config_path: Optional[str] = None
      
 def get_connection(config: Configuration, server_name: str = None, connection_type: str = None):
     server_name = server_name if server_name else config.src_server

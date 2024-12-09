@@ -8,11 +8,12 @@ import traceback
 import pyiceberg
 from dotenv import load_dotenv
 
-from irisiceberg.main import IcebergIRIS, Iceberg
-from irisiceberg.utils import Configuration, logger
+from pyiris_iceberg.main import IcebergIRIS, Iceberg
+from pyiris_iceberg.utils import Configuration, logger
 
 load_dotenv(verbose=True)
 CONFIG_PATH = os.getenv("IRISICE_CONFIG_PATH")
+print(f"CONFIG_PATH =  {CONFIG_PATH}")
 
 def create_IRISIceberg(config: Configuration):
 
@@ -104,20 +105,32 @@ def load_config(config_path: str = ""):
     config = Configuration(**config)
     return config 
 
-def main(config_str: str = None):
+def main(config_path: str = None):
 
-    # config is detemined in this order: passed as arg, passed as CLI arg
-    if not config_str:
-        # Check if it is a CLI arg. This is done autmotically by Pydantic
-        config = Configuration()
-        config_str = config.config_string
-        # Check if it can be loaded from ENV VAR
-        if not config_str and os.path.exists(CONFIG_PATH):
-            config_str = open(CONFIG_PATH).read()
+    config = Configuration()
+    config_path = config_path if config_path else config.config_path
 
-    if not config_str:
+    if config_path:
+        config_str = open(config_path).read()
+    elif os.path.exists(CONFIG_PATH):
+        config_str = open(CONFIG_PATH).read()
+    else:
         logger.error(f"No Config provided")
         sys.exit(1)
+    
+    # # config is determined in this order: passed as arg, passed as CLI arg
+    # if config_path:
+    #     config_str = open(config_path).read()
+    # else:
+    #     # Check if it is a CLI arg. This is done autmotically by Pydantic
+    #     config = Configuration()
+    #     # Check if it can be loaded from ENV VAR
+    #     if not config.config_path and os.path.exists(CONFIG_PATH):
+    #         config_str = open(CONFIG_PATH).read()
+
+    # if not config_str:
+    #     logger.error(f"No Config provided")
+    #     sys.exit(1)
     
     try:
         config_dict = json.loads(config_str)

@@ -1,0 +1,55 @@
+{
+  "src_server": "LocalIRIS",
+  "target_iceberg": "LocalTesting",
+  "job_type": "initial_table_sync",
+  "table_chunksize": 100,
+  "sql_clause": "",
+  "source_table_name": "iceberg_demo.titanic",
+  "target_table_name": "iceberg_demo.titanic",
+  "partition_field": "PassengerId",
+  "grid_type": "tabulator",
+  "servers": [
+    {
+      "name": "LocalTesting",
+      "dialect": "sqlite",
+      "database": "/tmp/iceberg/test.db",
+      "warehouse": "/tmp/iceberg",
+      "connection_type": "sqlite",
+      "schemas": []
+    },
+    {
+      "name": "LocalIRIS",
+      "dialect": "iris",
+      "database": "IRISAPP",
+      "driver": "com.intersystems.jdbc.IRISDriver",
+      "host": "localhost",
+      "password": "SYS",
+      "user": "_system",
+      "port": 1972,
+      "schemas": [
+        "iceberg_demo"
+      ],
+      "connection_type": "odbc"
+    }
+  ],
+  "icebergs": [
+    {
+      "name": "LocalTesting",
+      "uri": "sqlite:////tmp/iceberg/pyiceberg_catalog.db",
+      "warehouse": "/tmp/iceberg/"
+    },
+     {
+      "name": "LocalTesting_prebaked",
+      "uri": "sqlite:////tmp/iceberg/pyiceberg_catalog.db",
+      "warehouse": "/tmp/iceberg_prebaked/"
+    },
+    {
+      "name": "IRISCatalogLocalWarehouse",
+      "uri": "iris://_SYSTEM:sys@localhost:5551/USER",
+      "warehouse": "/tmp/iceberg",
+      "type": "sqlite"
+    }
+
+  
+  ]
+}

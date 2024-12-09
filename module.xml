@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+    <Document name="iris-iceberg.ZPM">
+        <Module>
+            <Name>iris-iceberg</Name>
+            <Version>1.0.0</Version>
+            <Description>Package to convert IRIS Data to Iceberg format</Description>
+            <Packaging>module</Packaging>
+            <SourcesRoot>src/cls/</SourcesRoot>
+            <Resource Name="User.PKG"/>
+            <FileCopy Name="data/" Target="${libdir}data/"/>
+            <FileCopy Name="src/pyiris_iceberg/" Target="${libdir}pyiris_iceberg/"/>
+            <FileCopy Name="templates/" Target="${libdir}templates/"/>
+        </Module>
+    </Document>
+</Export>

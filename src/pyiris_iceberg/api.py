@@ -7,11 +7,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import sessionmaker
-from irisiceberg.utils import get_alchemy_engine, Base, get_from_list, MyBaseSettings
-from irisiceberg.app import load_config, CONFIG_PATH
+from pyiris_iceberg.utils import get_alchemy_engine, Base, get_from_list, MyBaseSettings
+from pyiris_iceberg.app import load_config, CONFIG_PATH
 import pandas as pd
 from pydantic import BaseModel
-from pyiceberg.catalog import load_catalog
+from pyiris_iceberg.catalog import load_catalog
 from pathlib import Path
 
 app = FastAPI()

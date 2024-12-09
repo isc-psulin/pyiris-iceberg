@@ -16,10 +16,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker, Session
 
 # Local package
-import irisiceberg.utils as utils
-from irisiceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap, initialize_logger
-from irisiceberg.utils import create_iceberg_catalog_tables, logger
-from irisiceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
+import pyiris_iceberg.utils as utils
+from pyiris_iceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap, initialize_logger
+from pyiris_iceberg.utils import create_iceberg_catalog_tables, logger
+from pyiris_iceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
 
 class IRIS:
 

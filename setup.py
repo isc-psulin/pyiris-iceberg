@@ -2,7 +2,7 @@
 from setuptools import find_packages
 from distutils.core import setup     
 
-setup(name='irisiceberg',
+setup(name='pyiris_iceberg',
       version='1.0',
       description='IRIS Iceberg library',
       author='Patrick Sulin',
@@ -21,6 +21,6 @@ setup(name='irisiceberg',
                         'pyodbc>=5.1.0'],
       entry_points={
         'console_scripts': [
-            'irice=irisiceberg.app:main'
+            'irice=pyiris_iceberg.app:main'
         ]}
 )
