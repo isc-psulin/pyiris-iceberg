@@ -14,6 +14,7 @@ ENV IRISNAMESPACE "IRISAPP"
 
 ENV PYTHON_PATH=/usr/irissys/bin/
 ENV PATH "/usr/irissys/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/irisowner/bin:/home/irisowner/.local/bin"
+ENV IRISICE_CONFIG_PATH "local_testing_config.json"
 
 # SQLite
 USER root
