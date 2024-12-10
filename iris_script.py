@@ -17,13 +17,6 @@ iris.cls('Security.Users').UnExpireUserPasswords("*")
 # switch namespace to IRISAPP built by merge.cpf
 iris.system.Process.SetNamespace("IRISAPP")
 
-# # Load the config into a global
-# with open("/home/irisowner/dev/local_testing_config.json") as fi:
-#     config = fi.read()
-
-# glob_config=iris.gref('icebergConfig')
-# glob_config.set(config)
-
 # load ipm package listed in module.xml
 #iris.cls('%ZPM.PackageManager').Shell("load /home/irisowner/dev -v")
 print("Starting load of IPM")

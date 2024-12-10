@@ -10,9 +10,9 @@ base = {
     "job_type": "list_tables",
     "table_chunksize": 100,
     "sql_clause": "",
-    "source_table_name": "DevData",
-    "target_table_name": "DevStats.DevData",
-    "partition_field": "ID",
+    "source_table_name": "iris_demo.titanic",
+    "target_table_name": "iris_demo.titanic",
+    "partition_field": "PassengerID",
     "servers": [
         {
             "name": "LocalTesting",
@@ -28,10 +28,10 @@ base = {
             "database": "User",
             "driver": "com.intersystems.jdbc.IRISDriver",
             "host": "localhost",
-            "password": "sys",
+            "password": "SYS",
             "user": "_system",
-            "port": 5551,
-            "schemas": ["SQLUSER",],
+            "port": 1972,
+            "schemas": ["iris_demo",],
             "connection_type": "db-api",
         }
     ],

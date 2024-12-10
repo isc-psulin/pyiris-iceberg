@@ -23,10 +23,10 @@ base = {
             "database": "User",
             "driver": "com.intersystems.jdbc.IRISDriver",
             "host": "localhost",
-            "password": "sys",
+            "password": "SYS",
             "user": "_system",
             "port": 1972,
-            "schemas": ["FS"],
+            "schemas": [],
             "connection_type": "db-api"
         },
     ],
