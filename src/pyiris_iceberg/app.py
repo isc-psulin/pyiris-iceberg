@@ -13,7 +13,7 @@ from pyiris_iceberg.utils import Configuration, logger
 
 load_dotenv(verbose=True)
 CONFIG_PATH = os.getenv("IRISICE_CONFIG_PATH")
-print(f"CONFIG_PATH =  {CONFIG_PATH}")
+#print(f"CONFIG_PATH =  {CONFIG_PATH}")
 
 def create_IRISIceberg(config: Configuration):
 
@@ -67,11 +67,12 @@ def list_tables(config: Configuration):
         
         tables_with_ns = defaultdict(list)
         for ns in namespaces:
-            tables_with_ns[ns] = ice.iceberg.catalog.list_tables(ns) 
+            tables_with_ns[ns] = ice.catalog.list_tables(ns) 
         
         for ns, tablename in tables_with_ns.items():
             logger.info(f"{tablename}")
-            tables.append(f"{ns}.{tablename}")
+            if tablename:
+                tables.append(f"{ns}.{tablename}")
 
         print(tables)
     except Exception as ex:
@@ -80,20 +81,17 @@ def list_tables(config: Configuration):
     
     return tables
 
+def select_all(config: Configuration):
+    ice = Iceberg(config)
+    table = ice.load_table(config.target_table_name)
+    df = table.scan(limit=100000).to_pandas()
+    print(df)
+    return df
+
 def update_table(config: Configuration):
 
     ice = create_IRISIceberg(config)
     ice.update_iceberg_table()
-
-def load_config_old():
-    # Load the module from the given path
-    spec = importlib.util.spec_from_file_location('configuration', CONFIG_PATH)
-    module = importlib.util.module_from_spec(spec)
-    loaded = spec.loader.exec_module(module)
-    
-    config_dict = getattr(module, CONFIG_NAME)
-    config = Configuration(**config_dict)
-    return config 
 
 def load_config(config_path: str = ""):
     

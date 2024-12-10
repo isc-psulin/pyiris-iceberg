@@ -72,7 +72,7 @@ ClassMethod GetConfig() As %String [ Language = python ]
 {
     import json
     import iris
-    from irisiceberg.utils import Configuration
+    from pyiris_iceberg.utils import Configuration
 
     #config_str = iris.cls('User.iceberg').GetRawConfig()
     config_str = iris.cls('User.iceberg').LoadConfig() 
@@ -84,7 +84,7 @@ ClassMethod GetConfig() As %String [ Language = python ]
 ClassMethod ListTables() As %Status [ Language = python ]
 {
     import iris
-    from irisiceberg import app
+    from pyiris_iceberg import app
 
     tables = []
     try:
@@ -100,7 +100,7 @@ ClassMethod ListTables() As %Status [ Language = python ]
 ClassMethod InitialTableSync() As %Status [ Language = python ]
 {
     import iris
-    from irisiceberg import app
+    from pyiris_iceberg import app
 
     tables = []
     try:
@@ -113,7 +113,7 @@ ClassMethod InitialTableSync() As %Status [ Language = python ]
 ClassMethod UpdateTable() As %Status [ Language = python ]
 {
     import iris
-    from irisiceberg import app
+    from pyiris_iceberg import app
 
     tables = []
     try:
@@ -126,13 +126,28 @@ ClassMethod UpdateTable() As %Status [ Language = python ]
 ClassMethod PurgeTable() As %Status [ Language = python ]
 {
     import iris
-    from irisiceberg import app
+    from pyiris_iceberg import app
 
     tables = []
     try:
         config = iris.cls(__name__).GetConfig() 
         app.purge_table(config)
         print(f"Purged table {config.target_table_name}")
+    except Exception as ex:
+       print(f"Exception listing tables {ex}")
+
+    return tables
+}
+
+ClassMethod SelectAll() As %Status [ Language = python ]
+{
+    import iris
+    from pyiris_iceberg import app
+
+    tables = []
+    try:
+        config = iris.cls(__name__).GetConfig() 
+        app.select_all(config)
     except Exception as ex:
        print(f"Exception listing tables {ex}")
 

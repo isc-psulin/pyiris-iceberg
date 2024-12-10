@@ -12,4 +12,3 @@ services:
     volumes:
       - ./:/home/irisowner/dev
       - ./tmp:/tmp
-   # entrypoint: ["sh", "/home/irisowner/dev/entrypoint.sh"]

@@ -29,7 +29,7 @@
       "schemas": [
         "iceberg_demo"
       ],
-      "connection_type": "odbc"
+      "connection_type": "db-api"
     }
   ],
   "icebergs": [
