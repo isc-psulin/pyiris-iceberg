@@ -1,20 +1,38 @@
 # IRIS-ICEBERG
 The iris-iceberg library provides utilities for replicating IRIS(SQL) tables into Iceberg tables. It uses the pyiceberg, https://py.iceberg.apache.org/, library to interact with iceberg tables.
 
-This project is meant as an exploration of Iceberg and the PyIceberg library and replicating IRIS tables into Iceberg tables. The easiest way to test the library is to use the CLI shown in Basic Commands.
+This project is meant as an exploration of Iceberg and the PyIceberg library and replicating IRIS tables into Iceberg tables.
+This can be installed via docker with an IRIS instance and tested through the terminal or just via Python. In both cases, the commands are driven primarily through a configuration file, in this case named local_testing_config.json.
 
-The development has ben done on a mac and the following commands should work for Mac and Linux. Windows users will have to adjust some of these commands.
 
-## Installation
-1. git clone git@github.com:isc-patrick/iris-iceberg.git
-2. cd iris-iceberg
+## IRIS Docker Installation and basic use
+1. git clone git@github.com:isc-patrick/pyiris-iceberg.git
+2. cd pyiris-iceberg
+3. docker compose build
+4. docker compose up -d
+5. docker exec -it pyiris-iceberg-iris-1 /bin/bash
+6. ./install.sh
+7. iris session iris
+8. zn "IRISAPP"
+9. Check the install by listing the iceberg tables
+   1.  do ##class(User.iceberg).ListTables()
+10. Move the data from the iceberg_demo.titanic table to an iceberg table on your local file system
+   1. do ##class(User.iceberg).InitialTableSync()
+11. View the data in the iceberg table
+   1. do ##class(User.iceberg).SelectAll()
+12. View the data files for the iceberg table
+   1. !find /tmp/iceberg/iceberg_demo.db  
+13. Delete the iceberg table
+   1. do ##class(User.iceberg).PurgeTable()
+
+## Python Only Installation
+1. git clone git@github.com:isc-patrick/pyiris-iceberg.git
+2. cd pyiris-iceberg
 3. Create and activate a virtualenv
-4.  pip install -e .
-5.  pip install bin/intersystems_irispython-3.2.0-py3-none-any.whl
-6.  install sqlite3
+4. pip install .
+5. pip install bin/intersystems_irispython-3.2.0-py3-none-any.whl
+6. install sqlite3
 
-
-## Usage
 __Setup environment__  
 1. Generate a json config file. This also generates a .env file that points to this config files location
    1. python scripts/generate_configs.py
@@ -22,7 +40,7 @@ __Setup environment__
 3. Load data into sqlite
    1. sqlite3 /tmp/iceberg/test.db < data/devdata.sql 
 
-__Basic commands__  
+__CLI command list__  
 There are just a few commands using the CLI, irice
    * irice --job_type=list_tables
        - Lists all the tables in the Iceberg catalog
@@ -33,7 +51,7 @@ There are just a few commands using the CLI, irice
    * irice --job_type=purge-table
       - Deletes the Iceberg table from the catalog and the metadata and data files
 
-__Simple walkthrough of commands with locally installed data__  
+__Simple walkthrough of commands with Python install__  
 In the environment setup, you added data to a source table and created a config file that you be used for initial. Follow these steps to walk through the basic commands
 1. irice --job_type=list_tables
    1. Lists all of the tables in the Catalog 
