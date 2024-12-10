@@ -15,15 +15,15 @@ This can be installed via docker with an IRIS instance and tested through the te
 7. iris session iris
 8. zn "IRISAPP"
 9. Check the install by listing the iceberg tables
-   1.  do ##class(User.iceberg).ListTables()
+      - do ##class(User.iceberg).ListTables()
 10. Move the data from the iceberg_demo.titanic table to an iceberg table on your local file system
-   1. do ##class(User.iceberg).InitialTableSync()
+    -  do ##class(User.iceberg).InitialTableSync()
 11. View the data in the iceberg table
-   1. do ##class(User.iceberg).SelectAll()
+    -  do ##class(User.iceberg).SelectAll()
 12. View the data files for the iceberg table
-   1. !find /tmp/iceberg/iceberg_demo.db  
+    -  !find /tmp/iceberg/iceberg_demo.db  
 13. Delete the iceberg table
-   1. do ##class(User.iceberg).PurgeTable()
+    -  do ##class(User.iceberg).PurgeTable()
 
 ## Python Only Installation
 1. git clone git@github.com:isc-patrick/pyiris-iceberg.git
