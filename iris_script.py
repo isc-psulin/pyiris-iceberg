@@ -23,4 +23,7 @@ print("Starting load of IPM")
 assert ipm('load /home/irisowner/dev -v')
 print("Completed load of IPM")
 
+# Loading of data usually done here but this started failing when running in IPM
+# So now it is a manual install step
+
 
