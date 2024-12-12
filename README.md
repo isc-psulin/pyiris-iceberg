@@ -5,25 +5,22 @@ This project is meant as an exploration of Iceberg and the PyIceberg library and
 This can be installed via docker with an IRIS instance and tested through the terminal or just via Python. In both cases, the commands are driven primarily through a configuration file, in this case named local_testing_config.json.
 
 
-## IRIS Docker Installation and basic use
-1. git clone git@github.com:isc-patrick/pyiris-iceberg.git
-2. cd pyiris-iceberg
-3. docker compose build
-4. docker compose up -d
-5. docker exec -it pyiris-iceberg-iris-1 /bin/bash
-6. ./install.sh
-7. iris session iris
-8. zn "IRISAPP"
-9. Check the install by listing the iceberg tables
-      - do ##class(User.iceberg).ListTables()
-10. Move the data from the iceberg_demo.titanic table to an iceberg table on your local file system
-    -  do ##class(User.iceberg).InitialTableSync()
-11. View the data in the iceberg table
-    -  do ##class(User.iceberg).SelectAll()
-12. View the data files for the iceberg table
-    -  !find /tmp/iceberg/iceberg_demo.db  
-13. Delete the iceberg table
-    -  do ##class(User.iceberg).PurgeTable()
+## IRIS Docker Installation and basic use(Mac and Linux, obvious modifications required for Windows)
+```bash
+git clone git@github.com:isc-patrick/pyiris-iceberg.git
+cd pyiris-iceberg
+docker compose build
+docker compose up -d
+docker exec -it pyiris-iceberg-iris-1 /bin/bash
+./install.sh
+iris session iris
+zn "IRISAPP"
+do ##class(User.iceberg).ListTables()
+do ##class(User.iceberg).InitialTableSync()
+do ##class(User.iceberg).SelectAll()
+!find /tmp/iceberg/iceberg_demo.db  
+do ##class(User.iceberg).PurgeTable()
+```
 
 ## Python Only Installation
 1. git clone git@github.com:isc-patrick/pyiris-iceberg.git
