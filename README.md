@@ -22,10 +22,10 @@ iris session iris
 zn "IRISAPP"
 
 # This will list all the Iceberg tables, so you shold see an empty list
-do ##class(User.iceberg).ListTables()
+do ##class(User.iceberg).ListTables()  
 
 # This will copy the IRIS table specified in the config, create an Iceberg table and copy the data
-do ##class(User.iceberg).InitialTableSync()
+do ##class(User.iceberg).InitialTableSync()  
 
 # This use the pyiceberg scan() method to show the data
 do ##class(User.iceberg).SelectAll()
