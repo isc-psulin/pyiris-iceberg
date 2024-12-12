@@ -7,17 +7,30 @@ This can be installed via docker with an IRIS instance and tested through the te
 
 ## IRIS Docker Installation and basic use(Mac and Linux, obvious modifications required for Windows)
 ```bash
+# Get the code, build run the docker container
 git clone git@github.com:isc-patrick/pyiris-iceberg.git
 cd pyiris-iceberg
 docker compose build
 docker compose up -d
+
+# Connect to the container to complete installation
 docker exec -it pyiris-iceberg-iris-1 /bin/bash
 ./install.sh
+
+# Test some commands from the terminal
 iris session iris
 zn "IRISAPP"
+
+# This will list all the Iceberg tables, so you shold see an empty list
 do ##class(User.iceberg).ListTables()
+
+# This will copy the IRIS table specified in the config, create an Iceberg table and copy the data
 do ##class(User.iceberg).InitialTableSync()
+
+# This use the pyiceberg scan() method to show the data
 do ##class(User.iceberg).SelectAll()
+
+# List the files created for the Iceberg table
 !find /tmp/iceberg/iceberg_demo.db  
 do ##class(User.iceberg).PurgeTable()
 ```
@@ -31,10 +44,8 @@ do ##class(User.iceberg).PurgeTable()
 6. install sqlite3
 
 __Setup environment__  
-1. Generate a json config file. This also generates a .env file that points to this config files location
-   1. python scripts/generate_configs.py
-2. Create a /tmp/iceberg directory, or change the locations in the config for local files
-3. Load data into sqlite
+1. Create a /tmp/iceberg directory, or change the location in the config for local files
+2. Load data into sqlite
    1. sqlite3 /tmp/iceberg/test.db < data/devdata.sql 
 
 __CLI command list__  
