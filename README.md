@@ -50,6 +50,7 @@ __Setup environment__
 
 __CLI command examples__  
 There are just a few commands using the CLI, irice:
+
 ```bash
 # Lists all the tables in the Iceberg catalog
 irice --job_type=list_tables --src_server "LocalTesting"
@@ -67,6 +68,4 @@ irice --job_type=update_table --src_server "LocalTesting"
 
 # Deletes the Iceberg table from the catalog and the metadata and data files
 irice --job_type=purge-table --src_server "LocalTesting"
-
-
 ```
