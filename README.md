@@ -66,14 +66,15 @@ __Setup environment__
 irice --job_type=list_tables --src_server "LocalTesting"
 
 # Uses a source table to create an Iceberg table, using the schema data from the source table, and copies 
-# the data from the source table into the target Iceberg table. The values for these are all in the config file with # easy to understand names like source_tablename, target_tablename, etc. This will also create the Iceberg catalog 
+# the data from the source table into the target Iceberg table. The values for these are all in the config file with 
+# easy to understand names like source_tablename, target_tablename, etc. This will also create the Iceberg catalog 
 # tables if necessary.
 irice --job_type=initial_table_sync --src_server "LocalTesting"
 
 # View the files created for the Iceberg table
 find /tmp/iceberg/iceberg_demo.db  
 
-# This copies the data form a source table to a target table, but does not create the Iceberg table or create the Iceberg catalog tables     
+# This copies the data forfromm a source table to a target table, but does not create the Iceberg table or create the Iceberg catalog tables     
 irice --job_type=update_table --src_server "LocalTesting"
 
 # Deletes the Iceberg table from the catalog and the metadata and data files
