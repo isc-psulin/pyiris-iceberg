@@ -26,6 +26,7 @@ USER 51773
 
 ## Start IRIS
 RUN --mount=type=bind,src=.,dst=. \
+    pip3 install --upgrade pip && \
     pip3 install -r requirements.txt && \
     iris start IRIS && \
     iris merge IRIS merge.cpf && \
