@@ -22,11 +22,12 @@ USER root
 RUN apt-get update 
 RUN apt-get install -y sqlite3 libsqlite3-dev
 
+
 USER 51773 
 
 ## Start IRIS
 RUN --mount=type=bind,src=.,dst=. \
-    pip3 install --upgrade pip && \
+    #python3 -m pip install --upgrade pip
     pip3 install -r requirements.txt && \
     iris start IRIS && \
     iris merge IRIS merge.cpf && \
