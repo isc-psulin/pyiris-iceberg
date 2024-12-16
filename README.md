@@ -10,9 +10,8 @@ There are just 4 commands/methods
 4. purge_table: Deletes an Iceberg table and its data
 
 ## Docker installation and basic use
+1. Clone this repo, https://github.com/isc-patrick/pyiris-iceberg, and from the root dir:
 ```bash
-git clone git@github.com:isc-patrick/pyiris-iceberg.git
-cd pyiris-iceberg
 docker build --tag iris-ice .
 docker run  --name iris-ice -p 1972:1972 -p 52773:52773 -v ./:/home/irisowner/dev -v ./tmp:/tmp -d iris
 
