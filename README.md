@@ -55,7 +55,7 @@ do ##class(User.iceberg).PurgeTable()
 6. install sqlite3
 
 __Setup environment__  
-1. Create a /tmp/iceberg directory, or change the location in the config for local files
+1. Create a /tmp/iceberg directory 
 2. Load data into sqlite
    1. sqlite3 /tmp/iceberg/test.db < data/titanic.sql 
 
