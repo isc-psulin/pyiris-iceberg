@@ -1,7 +1,7 @@
 {
   "src_server": "LocalIRIS",
   "target_iceberg": "LocalTesting",
-  "job_type": "initial_table_sync",
+  "job_type": "list_tables",
   "table_chunksize": 100,
   "sql_clause": "",
   "source_table_name": "iceberg_demo.titanic",

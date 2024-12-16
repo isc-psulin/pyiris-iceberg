@@ -10,3 +10,4 @@ pydantic_core>=2.20.0
 sqlalchemy>=2.0 
 adlfs>=2024.7.0
 pyodbc>=5.1.0
+pyiris-iceberg
