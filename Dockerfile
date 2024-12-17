@@ -1,4 +1,5 @@
-ARG IMAGE=intersystemsdc/iris-community:2024.2-zpm
+ARG IMAGE=intersystemsdc/iris-community:latest-em-zpm
+
 FROM $IMAGE
 
 WORKDIR /home/irisowner/dev
@@ -26,8 +27,8 @@ USER 51773
 
 ## Start IRIS
 RUN --mount=type=bind,src=.,dst=. \
-    python3 -m pip install --upgrade pip && \
-    pip3 install -r requirements.txt && \
+#   python3 -m pip install --upgrade pip && \
+    pip3 install -r requirements-docker.txt && \
     iris start IRIS && \
     iris merge IRIS merge.cpf && \
     irispython iris_script.py && \
