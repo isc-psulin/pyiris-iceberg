@@ -1,10 +1,10 @@
-pyiris-iceberg
+# pyiris-iceberg
 pytest>=8.0 
 sqlalchemy-iris==0.12.0 
 pyarrow>=17.0.0 
 pandas>=2.2.0
 loguru>=0.7.0
-#pyiceberg==0.8.0
+# pyiceberg==0.8.0
 pydantic>=2.8.2
 pydantic-settings>=2.5.0
 pydantic_core>=2.20.0
