@@ -16,6 +16,11 @@ docker build --tag iris-ice .
 docker run  --name iris-ice -p 1972:1972 -p 52773:52773 -v ./:/home/irisowner/dev -v ./tmp:/tmp -d iris
 
 docker exec -it iris-ice /bin/bash
+pip install -t /usr/irissys/mgr/python/ .
+pip install -t /usr/irissys/mgr/python/ -r all-requirements.txt
+
+irice --help
+
 ```
 
 Now, you can invoke either directly from the CLI in the container or in an IRIS session.
