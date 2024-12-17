@@ -2,7 +2,7 @@
 **notes/
 
 **/**.ipynb 
-**/tmp** 
+**/tmp/iceberg** 
 
 **configs/**.json
 # Byte-compiled / optimized / DLL files
