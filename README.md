@@ -14,9 +14,10 @@ There are just 4 commands/methods
 ```bash
 docker build --tag iris-ice .
 docker run  --name iris-ice -p 1972:1972 -p 52773:52773 -v ./:/home/irisowner/dev -v ./tmp:/tmp -d iris-ice
-
 docker exec -it iris-ice /bin/bash
-pip install -r all-requirements.txt
+
+pip install .
+#pip install pyiris-iceberg  
 
 irice --help
 ```
