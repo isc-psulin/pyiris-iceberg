@@ -16,8 +16,7 @@ docker build --tag iris-ice .
 docker run  --name iris-ice -p 1972:1972 -p 52773:52773 -v ./:/home/irisowner/dev -v ./tmp:/tmp -d iris-ice
 
 docker exec -it iris-ice /bin/bash
-pip install -t /usr/irissys/mgr/python/ .
-pip install -t /usr/irissys/mgr/python/ -r all-requirements.txt
+pip install -r all-requirements.txt
 
 irice --help
 ```
