@@ -23,7 +23,8 @@ RUN apt-get install -y sqlite3 libsqlite3-dev
 
 USER 51773 
 
-RUN mkdir -p /tmp/iceberg
+RUN mkdir -p /home/irisowner/dev/iceberg_data
+
 ## Start IRIS
 RUN --mount=type=bind,src=.,dst=. \
 #   python3 -m pip install --upgrade pip && \

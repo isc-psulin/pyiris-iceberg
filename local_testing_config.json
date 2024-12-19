@@ -36,7 +36,7 @@
     {
       "name": "LocalTesting",
       "uri": "sqlite:////tmp/iceberg/pyiceberg_catalog.db",
-      "warehouse": "/tmp/iceberg/"
+      "warehouse": "/home/irisowner/dev/iceberg_data/"
     },
      {
       "name": "LocalTesting_prebaked",
