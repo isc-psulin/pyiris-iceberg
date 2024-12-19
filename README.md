@@ -10,10 +10,10 @@ There are just 4 commands/methods
 4. purge_table: Deletes an Iceberg table and its data
 
 ## Docker installation and basic use
-1. Clone this repo, https://github.com/isc-patrick/pyiris-iceberg, and from the root dir:
+1. Clone this repo, https://github.com/isc-patrick/pyiris-iceberg
 ```bash
-docker build --tag iris-ice .
-docker compose up -d
+docker build --tag iris-ice pyiris-iceberg/.
+docker compose -f pyiris-iceberg/docker-compose.yml up -d
 #docker run  --name iris-ice -p 1972:1972 -p 52773:52773 -v ./:/home/irisowner/dev -v ./tmp:/tmp -d iris-ice
 
 docker exec -it iris-ice /bin/bash
@@ -46,7 +46,7 @@ do ##class(User.iceberg).SelectAll()
 do ##class(User.iceberg).UpdateTable()  
 
 # List the files created for the Iceberg table
-!find /tmp/iceberg/iceberg_demo.db  
+!find /home/irisowner/dev/iceberg_data/iceberg_demo.db  
 do ##class(User.iceberg).PurgeTable()
 ```
 
@@ -59,9 +59,9 @@ do ##class(User.iceberg).PurgeTable()
 6. install sqlite3
 
 __Setup environment__  
-1. Create a /tmp/iceberg directory 
+1. Create a /home/irisowner/dev/iceberg_data directory 
 2. Load data into sqlite
-   1. sqlite3 /tmp/iceberg/test.db < data/titanic.sql 
+   1. sqlite3 /home/irisowner/dev/iceberg_data/test.db < data/titanic.sql 
 
 ## <a id="cli-examples">CLI command examples</a>
 
@@ -76,7 +76,7 @@ irice --job_type=list_tables --src_server "LocalTesting"
 irice --job_type=initial_table_sync --src_server "LocalTesting"
 
 # View the files created for the Iceberg table
-find /tmp/iceberg/iceberg_demo.db  
+find /home/irisowner/dev/iceberg_data/iceberg_demo.db  
 
 # This copies the data forfromm a source table to a target table, but does not create the Iceberg table or create the Iceberg catalog tables     
 irice --job_type=update_table --src_server "LocalTesting"
