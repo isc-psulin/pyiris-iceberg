@@ -84,3 +84,8 @@ irice --job_type=update_table --src_server "LocalTesting"
 # Deletes the Iceberg table from the catalog and the metadata and data files
 irice --job_type=purge-table --src_server "LocalTesting"
 ```
+
+
+## Troubleshooting
+   1. If running this in the Cloud or depending on the permissions of the machine you are installing on, you may need to log into the container as root: docker exec -it -u root iris-ice /bin/bash and then re-login not as root to execute commands.
+   2. 
