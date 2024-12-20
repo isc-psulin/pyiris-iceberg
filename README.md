@@ -51,7 +51,7 @@ do ##class(User.iceberg).PurgeTable()
 ```
 
 ## Python Only Installation
-1. git clone git@github.com:isc-patrick/pyiris-iceberg.git
+1. Clone this repo
 2. cd pyiris-iceberg
 3. Create and activate a virtualenv
 4. pip install .
@@ -59,8 +59,7 @@ do ##class(User.iceberg).PurgeTable()
 6. install sqlite3
 
 __Setup environment__  
-1. Create a /home/irisowner/dev/iceberg_data directory 
-2. Load data into sqlite
+1. Load data into sqlite
    1. sqlite3 /home/irisowner/dev/iceberg_data/test.db < data/titanic.sql 
 
 ## <a id="cli-examples">CLI command examples</a>
