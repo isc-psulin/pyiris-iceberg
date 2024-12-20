@@ -65,6 +65,7 @@ __Setup environment__
 
 ## <a id="cli-examples">CLI command examples</a>
 
+If you are using these from the docker install, remove the --src_server arg
 ```bash
 # Lists all the tables in the Iceberg catalog
 irice --job_type=list_tables --src_server "LocalTesting"

@@ -7,3 +7,5 @@ docker build --tag iris-ice pyiris-iceberg/. --no-cache
 docker compose -f pyiris-iceberg/docker-compose.yml up -d
 
 docker exec -it iris-ice /bin/bash
+
+pip install .
