@@ -82,5 +82,5 @@ find /home/irisowner/dev/iceberg_data/iceberg_demo.db
 irice --job_type=update_table --src_server "LocalTesting"
 
 # Deletes the Iceberg table from the catalog and the metadata and data files
-irice --job_type=purge-table --src_server "LocalTesting"
+irice --job_type=purge_table --src_server "LocalTesting"
 ```
