@@ -416,7 +416,41 @@ def initialize_logger(engine, min_db_level="INFO"):
     logger.add(db_handler.write, level=min_db_level)
     return logger
 
-def interpolate_json(config_dict: dict): # -> dict
-    # Looks for all JSON keys that start with $ and uses the value as an ENV VAR name
-    # The key remains the same, minus the $ and the value becomes the value of the ENV VAR
-    ...
+def interpolate_json(config_dict: dict) -> dict:
+    """
+    Looks for all JSON keys that start with $ and uses the value as an ENV VAR name.
+    The key remains the same, minus the $ and the value becomes the value of the ENV VAR.
+    
+    Args:
+        config_dict: Dictionary that may contain keys starting with $
+        
+    Returns:
+        Dictionary with environment variable interpolation applied
+    """
+    if not isinstance(config_dict, dict):
+        return config_dict
+    
+    result = {}
+    
+    for key, value in config_dict.items():
+        # Check if key starts with $
+        if key.startswith('$'):
+            # Remove the $ from the key
+            new_key = key[1:]
+            # Use the value as environment variable name
+            if isinstance(value, str):
+                env_value = os.getenv(value, value)  # Use original value as default if env var not found
+                result[new_key] = env_value
+            else:
+                result[new_key] = value
+        else:
+            # Recursively process nested dictionaries
+            if isinstance(value, dict):
+                result[key] = interpolate_json(value)
+            elif isinstance(value, list):
+                # Process lists that might contain dictionaries
+                result[key] = [interpolate_json(item) if isinstance(item, dict) else item for item in value]
+            else:
+                result[key] = value
+    
+    return result
