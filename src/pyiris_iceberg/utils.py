@@ -94,6 +94,7 @@ class IRISConfig(MyBaseModel):
 class CatalogConfig(MyBaseModel): 
     name: str
     uri: Optional[str] = ""
+    type: Optional[str] = "sql"
 
 class Configuration(MyBaseSettings):
     job_type: Optional[str] = "info"
@@ -414,3 +415,8 @@ def initialize_logger(engine, min_db_level="INFO"):
     db_handler = SQLAlchemyLogHandler(engine)
     logger.add(db_handler.write, level=min_db_level)
     return logger
+
+def interpolate_json(config_dict: dict): # -> dict
+    # Looks for all JSON keys that start with $ and uses the value as an ENV VAR name
+    # The key remains the same, minus the $ and the value becomes the value of the ENV VAR
+    ...
