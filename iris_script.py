@@ -5,6 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from iris import ipm
 import json
+from sqlalchemy.types import DOUBLE
 
 from time import sleep
 
@@ -33,7 +34,7 @@ for files in glob.glob('/home/irisowner/dev/data/*.csv'):
     # load the csv file into a pandas dataframe
     df = pd.read_csv(files)
     # write the dataframe to IRIS
-    df.to_sql(table_name, engine, if_exists='replace', index=False, schema='iceberg_demo')
+    df.to_sql(table_name, engine, if_exists='replace', index=False, schema='iceberg_demo', dtype={"age" : DOUBLE, "fare": DOUBLE})
 
 print("Finished load of data")
 

@@ -9,11 +9,11 @@ import pyiceberg
 from dotenv import load_dotenv
 
 from pyiris_iceberg.main import IcebergIRIS, Iceberg
-from pyiris_iceberg.utils import Configuration, logger
+from pyiris_iceberg.utils import Configuration, logger, interpolate_dict
 
 load_dotenv(verbose=True)
 CONFIG_PATH = os.getenv("IRISICE_CONFIG_PATH")
-#print(f"CONFIG_PATH =  {CONFIG_PATH}")
+print(f"CONFIG_PATH =  {CONFIG_PATH}")
 
 def create_IRISIceberg(config: Configuration):
 
@@ -99,22 +99,25 @@ def load_config(config_path: str = ""):
         config_path = CONFIG_PATH
 
     config = json.load(open(config_path))
-    logger.info(f"Loaded config from {config_path} : {config}")
+    config = interpolate_dict(config)
+    logger.debug(f"Loaded config from {config_path} : {config}")
     config = Configuration(**config)
     return config 
 
 def main(config_path: str = None):
 
+    # This allows getting config path from CLI arg
     config = Configuration()
-    config_path = config_path if config_path else config.config_path
+    config_path = config_path if config_path else config.config_path or CONFIG_PATH
 
-    if config_path:
-        config_str = open(config_path).read()
-    elif os.path.exists(CONFIG_PATH):
-        config_str = open(CONFIG_PATH).read()
-    else:
-        logger.error(f"No Config provided")
-        sys.exit(1)
+
+    # if config_path:
+    #     config_str = open(config_path).read()
+    # elif os.path.exists(CONFIG_PATH):
+    #     config_str = open(CONFIG_PATH).read()
+    # else:
+    #     logger.error(f"No Config provided")
+    #     sys.exit(1)
     
     # # config is determined in this order: passed as arg, passed as CLI arg
     # if config_path:
@@ -131,12 +134,13 @@ def main(config_path: str = None):
     #     sys.exit(1)
     
     try:
-        config_dict = json.loads(config_str)
+        config = load_config(config_path) #json.loads(config_str)
     except Exception as ex:
         logger.error(f"Failed to load config as JSON: {ex}")
+        traceback.print_exc()
         sys.exit(1)
 
-    config = Configuration(**config_dict)
+    #config = Configuration(**config_dict)
     
     job_type_func = globals().get(config.job_type)
     if not job_type_func:

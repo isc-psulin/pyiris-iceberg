@@ -48,7 +48,24 @@
       "uri": "iris://_SYSTEM:sys@localhost:5551/USER",
       "warehouse": "/tmp/iceberg",
       "type": "sqlite"
-    }
+    },
+
+    { "name": "s3tablescatalog",
+      "type": "rest",
+      "warehouse": "097647191938:s3tablescatalog/isc2-iceberg-demo",
+      "uri": "https://glue.us-east-1.amazonaws.com/iceberg",
+      "rest.sigv4-enabled": "true",
+      "rest.signing-name": "glue",
+      "rest.signing-region": "us-east-1"
+  },
+      {
+      "name": "glue_catalog",
+      "type": "glue",
+      "$client.region": "AWS_CLIENT_REGION",
+      "$client.access-key-id": "AWS_CLIENT_ACCESS_KEY_ID",
+      "$client.secret-access-key": "AWS_CLIENT_SECRET_ACCESS_KEY",
+      "location": "s3://isc-iceberg-demo/"
+    } 
 
   
   ]

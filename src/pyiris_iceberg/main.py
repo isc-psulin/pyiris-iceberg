@@ -11,6 +11,9 @@ import pyiceberg
 import pandas as pd
 import pyarrow as pa
 from pyiceberg.catalog.sql import  SqlCatalog
+from pyiceberg.catalog import load_catalog
+from pyiceberg.schema import Schema
+
 from sqlalchemy import  MetaData
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker, Session
@@ -18,9 +21,13 @@ from sqlalchemy.orm import sessionmaker, Session
 # Local package
 import pyiris_iceberg.utils as utils
 from pyiris_iceberg.utils import sqlalchemy_to_iceberg_schema, get_alchemy_engine, get_from_list, sql_to_pandas_typemap, initialize_logger
-from pyiris_iceberg.utils import create_iceberg_catalog_tables, logger
+from pyiris_iceberg.utils import create_iceberg_catalog_tables, logger, LOG_ON
 from pyiris_iceberg.utils import Configuration, IRISConfig, IcebergJob, IcebergJobStep
 
+def warn(*args, **kwargs):
+    pass
+import warnings
+warnings.warn = warn
 class IRIS:
 
     def __init__(self, config: Configuration):
@@ -87,8 +94,12 @@ class Iceberg():
 
         self.target_iceberg =  get_from_list(self.config.icebergs, self.config.target_iceberg) 
         
+        self.catalog = load_catalog(**dict(self.target_iceberg))
+        logger.debug(f"Catalog properties {self.catalog.properties}")
         # The configuration has to match the expected fields for it's particular type
-        self.catalog = SqlCatalog(**dict(self.target_iceberg))        
+        #self.catalog = SqlCatalog(**dict(self.target_iceberg))        
+        
+       # self.catalog = load_catalog(**dict(self.target_iceberg))  
     
     def load_table(self, tablename: str) -> pyiceberg.table.Table:
         ''' 
@@ -100,6 +111,9 @@ class Iceberg():
         except pyiceberg.exceptions.NoSuchTableError as ex:
             logger.error(f"Cannot find table {tablename}:  {ex}")
             return None
+        
+    def create_table(self, table_name: str, schema: Schema, location: str = ""):
+        self.catalog.create_table(table_name, schema=schema, location=location)
 
 class IcebergIRIS:
     def __init__(self, name: str = "", config: Configuration = None):
@@ -178,11 +192,12 @@ class IcebergIRIS:
         chunksize = self.config.table_chunksize
         
      
-        sql_queries = utils.generate_select_queries(tablename=source_tablename, min_id=min_id, max_id=max_id, partition_size=chunksize, clause=clause)
+        sql_queries = utils.generate_select_queries(tablename=source_tablename, min_id=min_id, max_id=max_id, 
+                                                    partition_size=chunksize, clause=clause, 
+                                                    partition_field=self.config.partition_field)
         
         for query in sql_queries:
             select = query[0][0]
-            print(select)
             connection = self.get_connection(self.iris.get_server())
             start_time = time.time()
             df = pd.read_sql(select, connection, dtype=dtypes)
@@ -191,27 +206,26 @@ class IcebergIRIS:
             connection.close()
             yield df
 
-    def update_iceberg_table(self, job_id: int = None):
+    def update_iceberg_table(self, job_id: int = None, iceberg_table = None):
         
         try:
-            iceberg_table = self.iceberg.load_table(self.config.target_table_name)
-            if iceberg_table is None:
-                logger.error(f"Cannot load table, exiting")
-                sys.exit(1)
+            if not iceberg_table:
+                iceberg_table = self.iceberg.load_table(self.config.target_table_name)
+                if iceberg_table is None:
+                    logger.error(f"Cannot load table {self.config.target_table_name}, exiting")
+                    sys.exit(1)
 
-            print(f"iceberg_table: {iceberg_table}")
+            logger.debug(f"iceberg_table: {iceberg_table}")
             row_count, min_id, max_id = self.iris.get_table_stats(self.config.source_table_name, self.config.sql_clause)
 
-            print(f"row_count: {row_count}")
+            logger.debug(f"row_count: {row_count}")
             if job_id is None:
                 job_id = self.create_job(row_count, min_id, max_id)
 
-            print(f"jobid {job_id}")
-
             if not self.iris.metadata:
                 self.iris.load_metadata()
-            
-            print("Loaded metadata")
+                logger.debug("Loaded metadata")
+
             # Set the current job ID for logging
             utils.current_job_id.set(job_id)
             
@@ -228,24 +242,27 @@ class IcebergIRIS:
                     start_time = time.time()
                     iceberg_table.append(arrow_data)
                     load_time = time.time() - start_time
-                    logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time} per sec")
+                    logger.info(f"Appended {arrow_data.num_rows} record to iceberg table in {load_time:.2f} seconds at {arrow_data.num_rows/load_time:2f} per sec")
                 else:
                     logger.info(f"Skipping write to iceberg table {self.config.target_table_name}")
                     
                 # Record job step
                 minval = 0 if pd.isna(iris_data[self.config.partition_field].min()) else iris_data[self.config.partition_field].min()
                 maxval = 0 if pd.isna(iris_data[self.config.partition_field].max()) else iris_data[self.config.partition_field].max()
-                self.create_job_step(job_id, step_start_time, minval, maxval)
+                
+                if LOG_ON:
+                    self.create_job_step(job_id, step_start_time, minval, maxval)
 
                 del iris_data, arrow_data
-                gc.collect()
+                gc.collect() 
                 
             # Update the main job record with the end time
-            with self.session() as session:
-                job = IcebergJob(id=job_id)
-                job.end_time = datetime.now()
-                session.commit()
-                session.close()
+            if LOG_ON:
+                with self.session() as session:
+                    job = IcebergJob(id=job_id)
+                    job.end_time = datetime.now()
+                    session.commit()
+                    session.close()
             
             # Reset the current job ID
             utils.current_job_id.set(None)
@@ -263,26 +280,32 @@ class IcebergIRIS:
         Outside of testing, update_iceberg_table should be used for moving data and the required tables should be created
         as a separate Devops process.
         """
-        # Create iceberg catalog tables if they do not exist
-        create_iceberg_catalog_tables(self.iceberg.target_iceberg)
+        # Create iceberg SQL catalog tables
+        if self.iceberg.catalog.properties.get("type") == 'sql':
+            create_iceberg_catalog_tables(self.iceberg.target_iceberg)
 
         # Create the main job record
-        job_id =  self.create_job()
-        print(f"Job ID {job_id}")
+        if LOG_ON:
+            job_id =  self.create_job()
+        else:
+            job_id = -99
          
         # Create table, deleting if it exists
         iceberg_table = self.create_iceberg_table(target_tablename=self.config.target_table_name, 
                                                   source_tablename=self.config.source_table_name)
-        logger.info(f"Created table {self.config.target_table_name}")
-
-        self.update_iceberg_table(job_id)
+        
+        logger.info(f"Created table {self.config.target_table_name} -  {iceberg_table.name()} {iceberg_table.catalog.name}")
+        namespace = ".".join(self.config.target_table_name.split(".")[:-1])
+        logger.info(f"Tables = {self.iceberg.catalog.list_tables(namespace)}")
+        self.update_iceberg_table(job_id, iceberg_table)
 
         # Update the main job record with the end time
-        with Session(self.iris.engine) as session:
-            job = IcebergJob(id=job_id)
-            job.end_time = datetime.now()
-            session.commit()
-            session.close()
+        if LOG_ON:
+            with Session(self.iris.engine) as session:
+                job = IcebergJob(id=job_id)
+                job.end_time = datetime.now()
+                session.commit()
+                session.close()
 
     def purge_table(self, tablename: str):
         '''
@@ -303,16 +326,21 @@ class IcebergIRIS:
         5. Create the table
         '''
 
-        # If the table exists, drop it
-        if self.iceberg.catalog.table_exists(target_tablename):
-            self.iceberg.catalog.drop_table(target_tablename)
+        # If the table exists, drop it. If the metadata cannot be found it might throw an error
+        try:
+            exists = self.iceberg.catalog.table_exists(target_tablename)
+            logger.debug(f"Exists = {exists}")
+            if self.iceberg.catalog.table_exists(target_tablename):
+                self.iceberg.catalog.drop_table(target_tablename)
+        except Exception as ex:
+            traceback.print_exc()
+            logger.info(ex)
         
         if not self.iris.metadata:
             self.iris.load_metadata()
 
         schema = self.create_table_schema(source_tablename)   
-        print(f"Iceberg schema {schema}")
-        logger.info(f"Iceberg schema {schema}")
+        logger.debug(f"Iceberg schema {schema}")
 
         # Create the namespace
         #tablename_only = tablename.split(".")[-1]
@@ -324,7 +352,8 @@ class IcebergIRIS:
 
         #partition_spec = pyiceberg.partitioning.PartitionSpec(pyiceberg.partitioning.PartitionField(name='ID'))
         if location:
-            logger.debug(f"TABLENAME _ {target_tablename}")
+            logger.debug(f"TABLENAME = {target_tablename}")
+            location += target_tablename
             table = self.iceberg.catalog.create_table(identifier=target_tablename,schema=schema, 
                                                       location=location)
         else:
@@ -333,7 +362,7 @@ class IcebergIRIS:
         return table 
 
     def create_table_schema(self, tablename: str):
-         print(self.iris.metadata)
          table = self.iris.metadata.tables[tablename]
+         logger.debug(f"Metadata from alchemy for {tablename}: {table}")
          schema = sqlalchemy_to_iceberg_schema(table)
          return schema

@@ -19,13 +19,27 @@ from loguru import logger
 from sqlalchemy.orm import declarative_base
 import logging
 from datetime import datetime
-
+from dotenv import load_dotenv
 import iris 
+from contextvars import ContextVar
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
+load_dotenv()
 
 # Create a Base class for declarative models
 Base = declarative_base()
 
-# Create a dictionary to map SQL types to pandas dtypes
+# Global logger instance
+log_level = os.environ.get("IRICE_LOG_LEVEL", "INFO")
+
+logger.remove() 
+logger.add(sys.stdout, level="DEBUG")
+
+LOG_ON = False
+
+current_job_id = ContextVar('current_job_id', default=None)
+
 sql_to_pandas_typemap = {
         'INTEGER': 'int32',
         'BIGINT': 'int64',
@@ -109,7 +123,7 @@ class Configuration(MyBaseSettings):
     target_iceberg: Optional[str] = ""
     table_chunksize: Optional[int] = 100000
     skip_write: Optional[bool] = False
-
+    partition_field: Optional[str] = 'id'
 
     # This is required to allow for passing in a string config so that it can be handled by the Pydantic parser
     config_path: Optional[str] = None
@@ -203,7 +217,7 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
         TimestampType,
         StringType,
     )
-    from sqlalchemy import INTEGER, BIGINT, FLOAT, BOOLEAN, DATE, DATETIME, String, TEXT, TIMESTAMP
+    from sqlalchemy import INTEGER, BIGINT, FLOAT, BOOLEAN, DATE, DATETIME, String, TEXT, TIMESTAMP, REAL
     from sqlalchemy_iris import DOUBLE
 
     type_mapping = {
@@ -216,7 +230,8 @@ def sqlalchemy_to_iceberg_schema(table: Table) -> Schema:
         String: StringType(),
         TEXT: StringType(),
         DOUBLE: DoubleType(),
-        TIMESTAMP: TimestampType()
+        TIMESTAMP: TimestampType(),
+        REAL: FloatType()
     }
 
     iceberg_fields = []
@@ -252,7 +267,7 @@ def split_sql(tablename, min_id, max_id, partition_size, row_count, clause):
         """ Generate SQL SELECT statements of equal partitions of records function
         """
         part_size = gap_fill_partition(min_id, max_id, partition_size, row_count)
-        logger.info(f"New Part size {part_size}")
+        logger.debug(f"New Part size {part_size}")
         sql_partitions = generate_select_queries(min_id=min_id, max_id=max_id, 
                                                 partition_size=part_size,
                                                 tablename=tablename, clause=clause) # -> base.IterableWrapper
@@ -272,7 +287,7 @@ def gap_fill_partition(min_id, max_id, partition_size, row_count):
     return new_part
 
 def generate_select_queries(min_id: int, max_id: int, partition_size:int, tablename : str,
-                            fields:list = [], clause:str = ""):
+                            fields:list = [], clause:str = "", partition_field = "id"):
     """ A function that takes a min id, max id, partition size, table name, list of fields and list of clauses 
     and generates a list of SQL queries selecting all records from a table, where each query selects one parition
     
@@ -285,7 +300,7 @@ def generate_select_queries(min_id: int, max_id: int, partition_size:int, tablen
         clauses (list): _description_
     """
     #queries = []
-    logger.info(f"generate_select_queries: min_id = {min_id}, max_id = {max_id}")
+    logger.debug(f"generate_select_queries: min_id = {min_id}, max_id = {max_id}")
     queries_obj = IterableWrapper([])
     
     # Set the intitial min and max ids
@@ -306,11 +321,10 @@ def generate_select_queries(min_id: int, max_id: int, partition_size:int, tablen
             query += ", ".join(fields)
         
         
-        query += " FROM " + tablename + " WHERE id >= " + str(query_min_id) + \
-                 " AND id < " + str(query_max_id)
+        query += f" FROM {tablename}  WHERE {partition_field} >= {query_min_id} AND {partition_field} < {query_max_id}"
         
         if clause:
-            query += " AND " + clause
+            query += f" AND {clause}"
         
         queries_obj.append(query, {"table": tablename, "min_id": query_min_id, "max_id": query_max_id})
         
@@ -378,46 +392,45 @@ def create_iceberg_catalog_tables(target_iceberg):
         logger.error("Error Creating iceberg catalog tables")
 
 
-from contextvars import ContextVar
-current_job_id = ContextVar('current_job_id', default=None)
-
-
 class SQLAlchemyLogHandler:
     def __init__(self, engine):
         self.engine = engine
         self.Session = sessionmaker(bind=engine)
 
     def write(self, message):
-        record = message.record
-        log_entry = LogEntry(
-            job_id=current_job_id.get(),
-            level=record["level"].name,
-            message=record["message"],
-            module=record["module"],
-            function_name=record["function"],
-            line=record["line"]
-        )
-        
-        with self.Session() as session:
-            session.add(log_entry)
-            session.commit()
 
-# Global logger instance
-logger.remove()  # Remove default handler
-#logger.add(sys.stderr, level="INFO")  # Add console handler
-logger.add(sys.stdout, level="DEBUG")  # Add console handler
+        try:
+            record = message.record
+            log_entry = LogEntry(
+                job_id=current_job_id.get(),
+                level=record["level"].name,
+                message=record["message"],
+                module=record["module"],
+                function_name=record["function"],
+                line=record["line"]
+            )
+            
+            with self.Session() as session:
+                session.add(log_entry)
+                session.commit()
+        except Exception as ex:
+            logger.warning(f"Failed to log {message[:20]}")
+
 
 
 def initialize_logger(engine, min_db_level="INFO"):
-    # Create the log_entries table
-    Base.metadata.create_all(engine)
-    
-    # Add SQLAlchemy handler
-    db_handler = SQLAlchemyLogHandler(engine)
-    logger.add(db_handler.write, level=min_db_level)
+
+    # Turning this off for demo
+    if False:
+        # Create the log_entries table
+        Base.metadata.create_all(engine)
+        
+        # Add SQLAlchemy handler
+        db_handler = SQLAlchemyLogHandler(engine)
+        logger.add(db_handler.write, level=min_db_level)
     return logger
 
-def interpolate_json(config_dict: dict) -> dict:
+def interpolate_dict(config_dict: dict) -> dict:
     """
     Looks for all JSON keys that start with $ and uses the value as an ENV VAR name.
     The key remains the same, minus the $ and the value becomes the value of the ENV VAR.
@@ -447,10 +460,10 @@ def interpolate_json(config_dict: dict) -> dict:
         else:
             # Recursively process nested dictionaries
             if isinstance(value, dict):
-                result[key] = interpolate_json(value)
+                result[key] = interpolate_dict(value)
             elif isinstance(value, list):
                 # Process lists that might contain dictionaries
-                result[key] = [interpolate_json(item) if isinstance(item, dict) else item for item in value]
+                result[key] = [interpolate_dict(item) if isinstance(item, dict) else item for item in value]
             else:
                 result[key] = value
     
